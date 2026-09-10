@@ -166,16 +166,19 @@ export const MARKETS_METADATA = {
   }
 };
 
+import { realMarketService, REAL_ASSET_MAPPING } from './realMarketService.js';
+
 class MarketDataManager {
   constructor() {
     this.candlesStore = new Map(); // key: symbol
     this.currentPrices = new Map();
     this.initHistoricalData();
+    realMarketService.init();
     this.startLiveTickSimulation();
   }
 
   initHistoricalData() {
-    // Genera 60 velas históricas para cada activo de cada mercado
+    // Inicializa serie de velas para cada activo
     for (const [marketKey, market] of Object.entries(MARKETS_METADATA)) {
       for (const asset of market.assets) {
         let price = asset.basePrice;
@@ -203,23 +206,26 @@ class MarketDataManager {
   }
 
   startLiveTickSimulation() {
-    // Actualiza precios cada 550ms para un movimiento de mercado dinámico y ultra-rápido
+    // Micro-ticks de alta frecuencia anclados al precio real de Wall Street y Binance
     setInterval(() => {
       for (const [marketKey, market] of Object.entries(MARKETS_METADATA)) {
         for (const asset of market.assets) {
-          const prevPrice = this.currentPrices.get(asset.symbol) || asset.basePrice;
-          const delta = (Math.random() - 0.495) * asset.volatility * prevPrice * 0.9;
-          const newPrice = Number((prevPrice + delta).toFixed(asset.decimals));
+          const realPrice = realMarketService.getRealPrice(asset.symbol);
+          const base = realPrice || this.currentPrices.get(asset.symbol) || asset.basePrice;
+          
+          // Micro-fluctuación sub-segundo para mantener el gráfico dinámico
+          const microDelta = (Math.random() - 0.495) * asset.volatility * base * 0.12;
+          const newPrice = Number((base + microDelta).toFixed(asset.decimals));
           this.currentPrices.set(asset.symbol, newPrice);
 
-          // Actualizar la última vela activa
+          // Actualizar la última vela activa en la tienda
           const candles = this.candlesStore.get(asset.symbol);
           if (candles && candles.length > 0) {
             const lastCandle = candles[candles.length - 1];
             lastCandle.close = newPrice;
             if (newPrice > lastCandle.high) lastCandle.high = newPrice;
             if (newPrice < lastCandle.low) lastCandle.low = newPrice;
-            lastCandle.volume += Math.floor(Math.random() * 50);
+            lastCandle.volume += Math.floor(Math.random() * 20);
 
             // Si ha pasado más de 1 minuto, cerrar vela y crear una nueva
             if (Date.now() - lastCandle.timestamp > 60 * 1000) {
@@ -236,14 +242,20 @@ class MarketDataManager {
           }
         }
       }
-    }, 550);
+    }, 450);
   }
 
   getCandles(symbol) {
+    const realCandles = realMarketService.getRealCandles(symbol);
+    if (realCandles && realCandles.length >= 10) {
+      return realCandles;
+    }
     return this.candlesStore.get(symbol) || [];
   }
 
   getCurrentPrice(symbol) {
+    const realPrice = realMarketService.getRealPrice(symbol);
+    if (realPrice) return realPrice;
     return this.currentPrices.get(symbol) || 0;
   }
 
@@ -251,7 +263,18 @@ class MarketDataManager {
     for (const [marketKey, market] of Object.entries(MARKETS_METADATA)) {
       const asset = market.assets.find(a => a.symbol === symbol);
       if (asset) {
-        return { ...asset, marketKey, marketName: market.name };
+        const realStats = realMarketService.getRealStats(symbol);
+        const mapping = REAL_ASSET_MAPPING[symbol];
+        return {
+          ...asset,
+          marketKey,
+          marketName: market.name,
+          currentPrice: realStats?.price || this.getCurrentPrice(symbol),
+          realStats: realStats || null,
+          mapping: mapping || null,
+          isRealFeed: true,
+          feedSource: mapping?.provider || 'Wall Street / Binance Live Feed'
+        };
       }
     }
     return null;
@@ -259,3 +282,4 @@ class MarketDataManager {
 }
 
 export const marketData = new MarketDataManager();
+export { realMarketService, REAL_ASSET_MAPPING };

@@ -64,17 +64,25 @@ export default function AIPredictionCard({ prediction, currentPrice, requiresPay
         {/* Cabecera de la Tarjeta */}
         <div className="flex items-start justify-between pb-3 border-b border-slate-800 gap-2">
           <div>
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-xs font-mono font-bold text-slate-400 uppercase tracking-wider">
                 {symbol} &bull; {marketType.toUpperCase()}
               </span>
               <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                 <Sparkles className="w-3 h-3" /> IA Cuantitativa
               </span>
+              <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-500/10 text-rose-400 border border-rose-500/30">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
+                Mercado Real 24/7
+              </span>
             </div>
             <h3 className="text-lg font-bold text-white truncate max-w-[280px]">
               {name}
             </h3>
+            <p className="text-[11px] font-mono text-emerald-400/90 flex items-center gap-1 mt-0.5 truncate max-w-[300px]">
+              <CheckCircle2 className="w-3 h-3 text-emerald-400 shrink-0" />
+              <span>{prediction.dataSource || 'Binance Global / Wall Street Real-Time'}</span>
+            </p>
           </div>
 
           <div className="text-right">

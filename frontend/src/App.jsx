@@ -186,6 +186,9 @@ export default function App() {
   const [isAdminOpen, setIsAdminOpen] = useState(false);
   const [isReanalyzing, setIsReanalyzing] = useState(false);
   const [notification, setNotification] = useState(null);
+  const [feedSource, setFeedSource] = useState('Binance Global Spot (24/7 Live Stream)');
+  const [realExchange, setRealExchange] = useState('BINANCE');
+  const [realStats, setRealStats] = useState(null);
 
   const activeSymbolRef = useRef(activeSymbol);
   activeSymbolRef.current = activeSymbol;
@@ -235,6 +238,9 @@ export default function App() {
         setCandles(data.candles || []);
         setCurrentPrice(data.currentPrice);
         if (data.name) setActiveAssetName(data.name);
+        if (data.feedSource) setFeedSource(data.feedSource);
+        if (data.realExchange) setRealExchange(data.realExchange);
+        if (data.realStats) setRealStats(data.realStats);
       }
     } catch (e) {
       console.warn('Error fetching candles', e);
@@ -535,6 +541,9 @@ export default function App() {
               candles={candles}
               currentPrice={currentPrice}
               marketType={activeMarketKey}
+              feedSource={feedSource}
+              realExchange={realExchange}
+              realStats={realStats}
             />
           </div>
 

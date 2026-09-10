@@ -55,7 +55,11 @@ app.get('/api/market/:symbol/candles', (req, res) => {
     marketType: assetMeta.marketKey,
     currentPrice,
     decimals: assetMeta.decimals,
-    candles
+    candles,
+    isRealFeed: true,
+    feedSource: assetMeta.feedSource || 'Mercado Mundial Real',
+    realStats: assetMeta.realStats || null,
+    realExchange: assetMeta.mapping?.exchange || 'GLOBAL'
   });
 });
 

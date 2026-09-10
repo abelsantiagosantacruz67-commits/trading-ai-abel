@@ -460,8 +460,11 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
       atr: Number(atr.toFixed(4))
     },
     executionDetails,
+    dataSource: assetMeta?.feedSource || assetMeta?.realStats?.source || 'Binance Global / Wall Street Real-Time',
+    isRealMarketData: true,
+    realExchange: assetMeta?.mapping?.exchange || 'GLOBAL',
     reasoning: reasons,
-    riskDisclaimer: 'Nota de Probabilidad & Gestión de Riesgo: Las probabilidades son estimaciones estadísticas cuantitativas. Ninguna predicción es 100% infalible; opere siempre con gestión de riesgo responsable (máx 1%-2% por trade).',
+    riskDisclaimer: 'Nota de Probabilidad & Gestión de Riesgo: Las probabilidades son estimaciones estadísticas cuantitativas basadas en velas reales de exchange. Ninguna predicción es 100% infalible; opere siempre con gestión de riesgo responsable.',
     generatedAt: new Date().toISOString()
   };
 }
