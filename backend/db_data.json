@@ -15,6 +15,58 @@
   ],
   "signalsHistory": [
     {
+      "id": "sig_1789014126603",
+      "timestamp": 1789014126603,
+      "symbol": "NVDA",
+      "name": "NVIDIA Corporation",
+      "marketType": "acciones",
+      "recommendation": "COMPRA (CALL / BUY)",
+      "probUp": 58.7,
+      "probDown": 41.3,
+      "price": 137.97,
+      "confidence": "Media-Alta (75%)",
+      "historicalWinRate": 84.2
+    },
+    {
+      "id": "sig_1789014126601",
+      "timestamp": 1789014126601,
+      "symbol": "EURUSD",
+      "name": "Euro / Dólar Estadounidense",
+      "marketType": "forex",
+      "recommendation": "VENTA FUERTE (PUT / SELL)",
+      "probUp": 12.7,
+      "probDown": 87.3,
+      "price": 1.08522,
+      "confidence": "Alta (85%+)",
+      "historicalWinRate": 94.3
+    },
+    {
+      "id": "sig_1789014126595",
+      "timestamp": 1789014126595,
+      "symbol": "XAUUSD",
+      "name": "Oro Spot Prime CFD (Gold / USD)",
+      "marketType": "matif_prime",
+      "recommendation": "NEUTRAL (ESPERAR CONFIRMACIÓN)",
+      "probUp": 50,
+      "probDown": 50,
+      "price": 2891.44,
+      "confidence": "Baja (Esperar)",
+      "historicalWinRate": 81.2
+    },
+    {
+      "id": "sig_1789014112624",
+      "timestamp": 1789014112624,
+      "symbol": "BTCUSD",
+      "name": "Bitcoin / USD (24/7)",
+      "marketType": "crypto",
+      "recommendation": "NEUTRAL (ESPERAR CONFIRMACIÓN)",
+      "probUp": 50,
+      "probDown": 50,
+      "price": 78399.99,
+      "confidence": "Baja (Esperar)",
+      "historicalWinRate": 81.2
+    },
+    {
       "id": "sig_1788998220463",
       "timestamp": 1788998220463,
       "symbol": "US30",
@@ -1261,58 +1313,6 @@
       "price": 1.09107,
       "confidence": "Alta (85%+)",
       "historicalWinRate": 87.6
-    },
-    {
-      "id": "sig_1788973245316",
-      "timestamp": 1788973245316,
-      "symbol": "DIGITAL-EURUSD",
-      "name": "EUR/USD Digital (Strike Fijo)",
-      "marketType": "digital",
-      "recommendation": "COMPRA FUERTE (CALL / BUY)",
-      "probUp": 87.3,
-      "probDown": 12.7,
-      "price": 1.09026,
-      "confidence": "Alta (85%+)",
-      "historicalWinRate": 87.6
-    },
-    {
-      "id": "sig_1788973235898",
-      "timestamp": 1788973235898,
-      "symbol": "XAUUSD",
-      "name": "Oro Spot Prime CFD (Gold / USD)",
-      "marketType": "matif_prime",
-      "recommendation": "COMPRA (CALL / BUY)",
-      "probUp": 58.7,
-      "probDown": 41.3,
-      "price": 2947.71,
-      "confidence": "Media-Alta (72%)",
-      "historicalWinRate": 77.5
-    },
-    {
-      "id": "sig_1788973065871",
-      "timestamp": 1788973065871,
-      "symbol": "XAUUSD",
-      "name": "Oro Spot Prime CFD (Gold / USD)",
-      "marketType": "matif_prime",
-      "recommendation": "NEUTRAL (ESPERAR CONFIRMACIÓN)",
-      "probUp": 50,
-      "probDown": 50,
-      "price": 2942.7,
-      "confidence": "Baja (Esperar)",
-      "historicalWinRate": 74.5
-    },
-    {
-      "id": "sig_1788973017450",
-      "timestamp": 1788973017450,
-      "symbol": "XAUUSD",
-      "name": "Oro Spot Prime CFD (Gold / USD)",
-      "marketType": "matif_prime",
-      "recommendation": "VENTA (PUT / SELL)",
-      "probUp": 33.2,
-      "probDown": 66.8,
-      "price": 2937.43,
-      "confidence": "Media-Alta (72%)",
-      "historicalWinRate": 80.4
     }
   ],
   "payments": [

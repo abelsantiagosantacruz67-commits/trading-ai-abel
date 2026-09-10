@@ -94,7 +94,8 @@ app.get('/api/ai/predict/:symbol', (req, res) => {
     name: assetMeta.name,
     candles,
     currentPrice,
-    strategy
+    strategy,
+    assetMeta
   });
 
   // Registrar señal en el historial

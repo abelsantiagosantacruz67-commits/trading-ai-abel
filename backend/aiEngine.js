@@ -125,7 +125,7 @@ export const AI_STRATEGIES = {
  * Motor Principal de IA: Evalúa todas las métricas y calcula probabilidades
  * de SUBIDA vs BAJADA según la estrategia seleccionada.
  */
-export function analyzeMarketWithAI({ marketType, symbol, name, candles, currentPrice, strategy = 'daytrading' }) {
+export function analyzeMarketWithAI({ marketType, symbol, name, candles, currentPrice, strategy = 'daytrading', assetMeta }) {
   const activeStrat = AI_STRATEGIES[strategy] || AI_STRATEGIES.daytrading;
 
   if (!candles || candles.length < 15) {
