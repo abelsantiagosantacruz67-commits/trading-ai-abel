@@ -20,16 +20,26 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
-  // Tomamos las últimas 36 velas para visualizar con claridad
-  const visibleCandles = candles.slice(-36);
+  // Tomamos las últimas 36 velas y sincronizamos la vela actual con el precio en vivo
+  const visibleCandles = candles.slice(-36).map((c, idx, arr) => {
+    if (idx === arr.length - 1 && currentPrice) {
+      return {
+        ...c,
+        close: currentPrice,
+        high: Math.max(c.high || currentPrice, currentPrice),
+        low: Math.min(c.low || currentPrice, currentPrice)
+      };
+    }
+    return c;
+  });
   
-  // Rangos de precios
-  const minPrice = Math.min(...visibleCandles.map(c => c.low)) * 0.9995;
-  const maxPrice = Math.max(...visibleCandles.map(c => c.high)) * 1.0005;
+  // Rangos de precios dinámicos
+  const minPrice = Math.min(...visibleCandles.map(c => c.low)) * 0.9997;
+  const maxPrice = Math.max(...visibleCandles.map(c => c.high)) * 1.0003;
   const priceRange = maxPrice - minPrice || 1;
 
   const candleSpacing = chartWidth / visibleCandles.length;
-  const candleBodyWidth = Math.max(4, candleSpacing * 0.65);
+  const candleBodyWidth = Math.max(4, candleSpacing * 0.68);
 
   const getY = (price) => {
     return padding.top + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
@@ -233,6 +243,20 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
                 stroke="#10b981"
                 strokeWidth="1.5"
                 strokeDasharray="4 2"
+              />
+              <circle
+                cx={width - padding.right}
+                cy={getY(currentPrice)}
+                r="3.5"
+                fill="#10b981"
+              />
+              <circle
+                cx={width - padding.right}
+                cy={getY(currentPrice)}
+                r="8"
+                fill="#10b981"
+                opacity="0.3"
+                className="animate-ping"
               />
               <rect
                 x={width - padding.right + 2}
