@@ -88,10 +88,10 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
           </div>
         </div>
 
-        {/* Timeframes & Indicadores */}
+        {/* Timeframes oficiales de IQ Option & Indicadores */}
         <div className="flex items-center gap-2">
           <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800 text-xs font-mono">
-            {['30s', '1m', '5m', '15m'].map((tf) => (
+            {['5s', '15s', '30s', '1m', '5m'].map((tf) => (
               <button
                 key={tf}
                 onClick={() => setTimeframe(tf)}

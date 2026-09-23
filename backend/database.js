@@ -22,8 +22,8 @@ export const PAYMENT_CONFIG = {
   }
 };
 
-// 2 dias en milisegundos (48 horas exactas)
-const TRIAL_DURATION_MS = 2 * 24 * 60 * 60 * 1000;
+// 3 dias en milisegundos (72 horas exactas)
+const TRIAL_DURATION_MS = 3 * 24 * 60 * 60 * 1000;
 
 class Database {
   constructor() {
@@ -153,7 +153,7 @@ class Database {
         secondsLeft: 0,
         totalSecondsLeft: 0,
         trialEndsAt: user.trialEndsAt,
-        message: 'Tu prueba gratuita de 2 dias ha expirado. Adquiere un plan para continuar accediendo a las senales.'
+        message: 'Tu prueba gratuita de 3 dias ha expirado. Adquiere un plan para continuar accediendo a las senales.'
       };
     }
 
@@ -182,7 +182,7 @@ class Database {
         secondsLeft: 0,
         totalSecondsLeft: 0,
         trialEndsAt: user.trialEndsAt,
-        message: 'Tu prueba gratuita de 2 dias ha expirado.'
+        message: 'Tu prueba gratuita de 3 dias ha expirado.'
       };
     }
 

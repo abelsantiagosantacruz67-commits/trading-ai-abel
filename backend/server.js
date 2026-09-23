@@ -69,14 +69,14 @@ app.get('/api/ai/predict/:symbol', (req, res) => {
   const strategy = req.query.strategy || 'daytrading';
   const userId = getRequestUserId(req);
 
-  // Verificar estado del periodo de prueba (2 días) o suscripción
+  // Verificar estado del periodo de prueba (3 días) o suscripción
   const trialStatus = db.getTrialStatus(userId);
   if (trialStatus.requiresPaywall) {
     return res.status(403).json({
       success: false,
       requiresPaywall: true,
       trialStatus,
-      message: 'Tu prueba gratuita de 2 días ha expirado. Por favor suscríbete para desbloquear las probabilidades de la IA en tiempo real.'
+      message: 'Tu prueba gratuita de 3 días ha expirado. Por favor suscríbete para desbloquear las probabilidades de la IA en tiempo real.'
     });
   }
 

@@ -70,9 +70,9 @@ export default function PaywallModal({ isOpen, onClose, onSubscribe, isExpired }
       badge: 'MICRO-PASE',
       description: 'Acceso total por 24 horas para operar noticias y volatilidad.',
       features: [
-        'Acceso completo a los 12 mercados por 24h',
+        'Acceso completo a los 7 mercados de IQ Option por 24h',
         'Señales y probabilidades de IA en tiempo real',
-        'Blips, Digitales, Forex y Crypto 24/7'
+        'Blitz (5s-60s), Digitales, Forex y CFDs'
       ]
     },
     {
@@ -81,13 +81,13 @@ export default function PaywallModal({ isOpen, onClose, onSubscribe, isExpired }
       priceUSD: 29,
       priceCOP: '116.000',
       period: '/mes',
-      description: 'Acceso ilimitado mes a mes para traders activos.',
+      description: 'Acceso ilimitado mes a mes para traders de IQ Option.',
       features: [
-        'Acceso total a los 12 mercados financieros',
+        'Acceso total a los 7 mercados de IQ Option',
         'Probabilidades de Subida/Bajada en tiempo real',
-        'Opciones Blips y Digitales (30s - 15m)',
-        'CFDs: Forex, Crypto 24/7, Acciones, Energías, Bonos',
-        'Stop Loss y Take Profit recomendados'
+        'Opciones Blitz (5s-60s) y Digitales (1m-15m)',
+        'CFDs: Forex, Acciones, ETFs, Índices, Materias Primas',
+        'Stop Loss, Take Profit y modo OTC 24/7'
       ]
     },
     {
@@ -98,13 +98,13 @@ export default function PaywallModal({ isOpen, onClose, onSubscribe, isExpired }
       period: '/3 meses',
       badge: 'MÁS POPULAR • AHORRA 20%',
       popular: true,
-      description: 'La opción recomendada para traders consistentes.',
+      description: 'La opción recomendada para traders consistentes de IQ Option.',
       features: [
         'Todo lo incluido en el Plan Mensual',
-        'Prioridad de ejecución en señales cuantitativas',
+        'Prioridad de ejecución en señales de alta volatilidad',
         'Filtro avanzado de confluencias de IA',
         'Acceso a nuevos algoritmos y métricas',
-        'Soporte prioritario directo'
+        'Soporte prioritario directo 24/7'
       ]
     },
     {
@@ -117,8 +117,8 @@ export default function PaywallModal({ isOpen, onClose, onSubscribe, isExpired }
       description: 'Para traders avanzados e inversores de alto rendimiento.',
       features: [
         'Todo lo del Plan Trimestral',
-        'Acceso multiventana ilimitado a los 12 mercados',
-        'Canal VIP privado de alertas de Telegram',
+        'Acceso multiventana ilimitado a los 7 mercados de IQ Option',
+        'Canal VIP privado de alertas de trading',
         'Webhooks de señales para bots / automatizaciones',
         'Garantía de actualización continua de IA'
       ]
@@ -256,10 +256,10 @@ export default function PaywallModal({ isOpen, onClose, onSubscribe, isExpired }
           </div>
 
           <h2 className="text-2xl md:text-3xl font-black text-white tracking-tight">
-            {isExpired ? 'Tu periodo de prueba de 2 días ha expirado' : 'Elige tu Plan y Realiza tu Pago'}
+            {isExpired ? 'Tu periodo de prueba de 3 días ha expirado' : 'Elige tu Plan y Realiza tu Pago'}
           </h2>
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
-            Recibe acceso total e ilimitado a las probabilidades de la IA en los 12 mercados. Pago directo por <strong className="text-fuchsia-400">Nequi Colombia</strong> o <strong className="text-sky-400">PayPal</strong>.
+            Recibe acceso total e ilimitado a las probabilidades de la IA en los 7 mercados oficiales de IQ Option. Pago directo por <strong className="text-fuchsia-400">Nequi Colombia</strong> o <strong className="text-sky-400">PayPal</strong>.
           </p>
         </div>
 

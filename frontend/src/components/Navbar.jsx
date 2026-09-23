@@ -19,11 +19,11 @@ export default function Navbar({ trialStatus, onOpenPaywall, onToggleForceExpire
               <span className="text-xl font-black tracking-wider text-white bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
                 NEXUS AI TRADING
               </span>
-              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                12 Mercados
+              <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/30">
+                IQ OPTION &bull; 7 Mercados
               </span>
             </div>
-            <p className="text-xs text-slate-400">Inteligencia Artificial Predictiva & Confluencia Estadística</p>
+            <p className="text-xs text-slate-400">Inteligencia Artificial Cuantitativa & Probabilidades en Tiempo Real</p>
           </div>
         </div>
 
@@ -39,7 +39,7 @@ export default function Navbar({ trialStatus, onOpenPaywall, onToggleForceExpire
             <div className="flex items-center gap-2.5 px-3.5 py-1.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs">
               <Clock className="w-4 h-4 text-amber-400 animate-pulse" />
               <div>
-                <span className="font-semibold text-slate-200">Prueba 2 Días: </span>
+                <span className="font-semibold text-slate-200">Prueba 3 Días: </span>
                 <span className="font-mono font-bold text-amber-400">
                   {trialStatus.daysLeft}d {trialStatus.hoursLeft}h {trialStatus.minutesLeft}m {trialStatus.secondsLeft}s
                 </span>
@@ -48,19 +48,19 @@ export default function Navbar({ trialStatus, onOpenPaywall, onToggleForceExpire
           ) : (
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold">
               <AlertCircle className="w-4 h-4 text-rose-400" />
-              <span>Prueba de 2 Días Expirada</span>
+              <span>Prueba de 3 Días Expirada</span>
             </div>
           )}
 
           {/* Simulador para testing del Paywall */}
           <button
             onClick={onToggleForceExpire}
-            title="Simular cómo ve el usuario la app cuando expira la prueba de 2 días"
+            title="Simular cómo ve el usuario la app cuando expira la prueba de 3 días"
             className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 text-xs transition"
           >
             <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
             <span className="hidden sm:inline">
-              {requiresPaywall ? 'Restaurar 2 Días' : 'Simular Expiración'}
+              {requiresPaywall ? 'Restaurar 3 Días' : 'Simular Expiración'}
             </span>
           </button>
 

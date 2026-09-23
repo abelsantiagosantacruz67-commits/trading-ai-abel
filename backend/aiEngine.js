@@ -367,30 +367,38 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
     confidence = 'Baja (Esperar)';
   }
 
-  // Parámetros de ejecución adaptados a la estrategia elegida
+  // Parámetros de ejecución adaptados a los instrumentos oficiales de IQ Option
   let executionDetails = {};
-  if (marketType === 'blips' || marketType === 'blitz') {
+  if (marketType === 'blitz' || marketType === 'blips') {
+    const payout = assetMeta?.payout || 95;
     executionDetails = {
-      type: 'Opciones Blips Turbo',
+      type: 'Blitz IQ Option',
       strategyUsed: activeStrat.name,
-      recommendedExpiration: strategy === 'scalping' ? '30 a 60 segundos' : '1 a 3 minutos',
-      alternateExpiration: '1m / 5m',
+      recommendedExpiration: strategy === 'scalping' ? '15 a 30 segundos' : '60 segundos',
+      alternateExpiration: '5s / 15s / 30s / 60s',
       entryPrice: currentPrice,
-      recommendedAction: probUp > probDown ? 'CALL (Subida)' : 'PUT (Bajada)',
-      targetPayout: '92% - 95%'
+      recommendedAction: probUp > probDown ? 'SUBE (CALL / COMPRA)' : 'BAJA (PUT / VENTA)',
+      iqAction: probUp > probDown ? 'SUBE' : 'BAJA',
+      targetPayout: `${payout}%`,
+      payoutPercent: payout,
+      exampleProfit: `Inversión $10 -> Retorno $${(10 * (1 + payout / 100)).toFixed(2)} USD`
     };
   } else if (marketType === 'digital') {
+    const payout = assetMeta?.payout || 92;
     executionDetails = {
-      type: 'Opciones Digitales',
+      type: 'Digitales IQ Option',
       strategyUsed: activeStrat.name,
-      recommendedExpiration: strategy === 'scalping' ? '1 a 2 minutos' : '5 a 15 minutos',
-      alternateExpiration: '1m / 15m',
+      recommendedExpiration: strategy === 'scalping' ? '1 minuto' : '5 minutos',
+      alternateExpiration: '1m / 5m / 15m',
       strikePrice: currentPrice,
-      recommendedAction: probUp > probDown ? 'CALL (Subida)' : 'PUT (Bajada)',
-      targetPayout: '88% - 94%'
+      recommendedAction: probUp > probDown ? 'SUBE (CALL / COMPRA)' : 'BAJA (PUT / VENTA)',
+      iqAction: probUp > probDown ? 'SUBE' : 'BAJA',
+      targetPayout: `${payout}%`,
+      payoutPercent: payout,
+      exampleProfit: `Inversión $10 -> Retorno $${(10 * (1 + payout / 100)).toFixed(2)} USD`
     };
   } else {
-    // Mercados CFD con Margen: SL/TP adaptados matemáticamente a la estrategia
+    // Mercados CFD con Margen de IQ Option: Multiplicador oficial, SL y TP
     const slDistance = atr * activeStrat.slMultiplier;
     const tp1Distance = atr * activeStrat.tp1Multiplier;
     const tp2Distance = atr * activeStrat.tp2Multiplier;
@@ -400,32 +408,38 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
     const takeProfit1 = isBuy ? currentPrice + tp1Distance : currentPrice - tp1Distance;
     const takeProfit2 = isBuy ? currentPrice + tp2Distance : currentPrice - tp2Distance;
 
-    const decimals = (symbol.includes('BTC') || symbol.includes('US30') || symbol.includes('NAS') || symbol.includes('COCOA')) ? 1
-      : (symbol.includes('JPY') || symbol.includes('NATGAS') || symbol.includes('COPPER')) ? 3
-      : (symbol.includes('EUR') || symbol.includes('GBP') || symbol.includes('AUD') || symbol.includes('XRP') || symbol.includes('DOGE')) ? 4
-      : 2;
+    const decimals = assetMeta?.decimals ?? (
+      (symbol.includes('BTC') || symbol.includes('US30') || symbol.includes('NAS')) ? 1
+      : (symbol.includes('JPY') || symbol.includes('NATGAS')) ? 3
+      : (symbol.includes('EUR') || symbol.includes('GBP') || symbol.includes('AUD')) ? 5
+      : 2
+    );
 
-    const leverage = marketType === 'forex' ? '1:50 - 1:100 (Margen)'
-      : marketType === 'crypto' ? '1:5 - 1:10 (Spot/CFD)'
-      : marketType === 'metales' ? '1:20 (Precious Metals)'
-      : marketType === 'energias' ? '1:20 (Energy CFD)'
-      : marketType === 'bonos' ? '1:50 (Sovereign Debt)'
-      : marketType === 'agricolas' ? '1:10 (CBOT Softs)'
-      : '1:20';
+    const iqMultiplier = assetMeta?.multiplier || (
+      marketType === 'forex' ? 'x1000'
+      : marketType === 'indices' ? 'x150'
+      : marketType === 'materias_primas' ? 'x100'
+      : 'x20'
+    );
 
     const rrRatio = strategy === 'swing_smc' ? '1:2.8 (Óptimo Institucional)' 
       : strategy === 'scalping' ? '1:1.8 (Rápido)' 
       : '1:2.3 (Equilibrado)';
 
     executionDetails = {
-      type: 'CFD con Margen',
+      type: 'CFD con Margen IQ Option',
       strategyUsed: activeStrat.name,
       entryPrice: currentPrice,
+      recommendedAction: isBuy ? 'SUBE (COMPRAR)' : 'BAJA (VENDER)',
+      iqAction: isBuy ? 'SUBE' : 'BAJA',
+      iqMultiplier: iqMultiplier,
       stopLoss: Number(stopLoss.toFixed(decimals)),
       takeProfit1: Number(takeProfit1.toFixed(decimals)),
       takeProfit2: Number(takeProfit2.toFixed(decimals)),
+      stopLossPercent: '-50%',
+      takeProfitPercent: '+120%',
       riskRewardRatio: rrRatio,
-      recommendedLeverage: leverage
+      recommendedLeverage: `Multiplicador IQ Option ${iqMultiplier}`
     };
   }
 
