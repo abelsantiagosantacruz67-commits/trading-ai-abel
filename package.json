@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "echo 'Frontend prebuilt and ready'",
+    "build": "npm --prefix frontend install && npm --prefix frontend run build",
     "start": "node backend/server.js",
     "server": "node backend/server.js",
     "client": "npm --prefix frontend run dev",

@@ -361,6 +361,7 @@ if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
   app.use((req, res, next) => {
     if (req.path.startsWith('/api')) return next();
+    if (req.path.includes('.')) return res.status(404).send('Asset not found');
     res.sendFile(path.join(distPath, 'index.html'));
   });
 }
