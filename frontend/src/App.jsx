@@ -412,6 +412,9 @@ export default function App() {
     showNotification('Recalculando probabilidades con datos en tiempo real de IQ Option...');
   };
 
+  const activeAssetObj = markets[activeMarketKey]?.assets?.find(a => a.symbol === activeSymbol);
+  const activePayout = activeAssetObj?.payout || prediction?.executionDetails?.payout || (activeMarketKey === 'blitz' ? 95 : activeMarketKey === 'digital' ? 94 : null);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-emerald-500 selection:text-slate-950">
       {/* Notificación Flotante */}
@@ -524,6 +527,7 @@ export default function App() {
               feedSource={feedSource}
               realExchange={realExchange}
               realStats={realStats}
+              payout={activePayout}
             />
           </div>
 

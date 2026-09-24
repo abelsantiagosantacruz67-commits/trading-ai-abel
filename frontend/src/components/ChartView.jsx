@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
 import { Maximize2, BarChart2, Eye, Sliders } from 'lucide-react';
 
-export default function ChartView({ symbol, name, candles = [], currentPrice, marketType, feedSource, realExchange, realStats }) {
+export default function ChartView({ symbol, name, candles = [], currentPrice, marketType, feedSource, realExchange, realStats, payout }) {
   const [timeframe, setTimeframe] = useState('1m');
   const [showIndicators, setShowIndicators] = useState(true);
 
   if (!candles || candles.length === 0) {
     return (
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 h-[460px] flex items-center justify-center text-slate-500">
+      <div className="bg-[#0a0e17] border border-[#1c2333] p-6 h-[460px] flex items-center justify-center text-slate-500">
         Cargando datos del mercado real mundial en tiempo real...
       </div>
     );
@@ -16,7 +16,7 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
   // Dimensiones del gráfico
   const width = 760;
   const height = 360;
-  const padding = { top: 20, right: 65, bottom: 30, left: 15 };
+  const padding = { top: 20, right: 75, bottom: 35, left: 15 };
   const chartWidth = width - padding.left - padding.right;
   const chartHeight = height - padding.top - padding.bottom;
 
@@ -39,7 +39,7 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
   const priceRange = maxPrice - minPrice || 1;
 
   const candleSpacing = chartWidth / visibleCandles.length;
-  const candleBodyWidth = Math.max(4, candleSpacing * 0.68);
+  const candleBodyWidth = Math.max(4, candleSpacing * 0.7);
 
   const getY = (price) => {
     return padding.top + chartHeight - ((price - minPrice) / priceRange) * chartHeight;
@@ -60,6 +60,26 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
     minPrice
   ];
 
+  // Generamos etiquetas de tiempo para el eje X
+  const timeLabels = [];
+  const now = new Date();
+  for (let i = 0; i <= 4; i++) {
+    const idx = Math.floor((visibleCandles.length - 1) * (i / 4));
+    if (visibleCandles[idx]) {
+      const x = padding.left + idx * candleSpacing + candleSpacing / 2;
+      let intervalMs = 60000;
+      if (timeframe === '5s') intervalMs = 5000;
+      if (timeframe === '15s') intervalMs = 15000;
+      if (timeframe === '30s') intervalMs = 30000;
+      if (timeframe === '5m') intervalMs = 300000;
+      
+      const time = new Date(now.getTime() - (visibleCandles.length - 1 - idx) * intervalMs);
+      const timeStr = time.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: timeframe.includes('s') ? '2-digit' : undefined });
+      
+      timeLabels.push({ x, timeStr });
+    }
+  }
+
   const displaySource = feedSource || (
     symbol.includes('BTC') || symbol.includes('ETH') || symbol.includes('SOL') || symbol.includes('XRP') || symbol.includes('BNB') || symbol.includes('DOGE')
       ? 'Binance Global Spot (24/7 Live Stream)'
@@ -72,89 +92,134 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
       : 'NASDAQ / Wall Street Real-Time'
   );
 
+  const getAssetIcon = (type, sym) => {
+    if (type === 'crypto' || sym.includes('BTC') || sym.includes('ETH')) return '₿';
+    if (type === 'forex' || sym.includes('EUR') || sym.includes('USD')) return '💱';
+    if (sym.includes('XAU') || sym.includes('GOLD')) return '🥇';
+    if (sym.includes('US30') || sym.includes('NAS')) return '📊';
+    return '📈';
+  };
+
+  const assetIcon = getAssetIcon(marketType, symbol);
+  const isJpyOrIndex = symbol.includes('JPY') || symbol.includes('US30');
+  const formattedCurrentPrice = currentPrice ? currentPrice.toFixed(isJpyOrIndex ? 2 : 5) : '0.00000';
+
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex flex-col justify-between">
+    <div className="bg-[#0a0e17] border border-[#1c2333] p-0 shadow-2xl flex flex-col justify-between font-sans overflow-hidden">
       {/* Controles y Cabecera del Gráfico */}
-      <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-base font-bold text-white font-mono">{symbol}</span>
-            <span className="text-xs text-slate-400 font-medium truncate max-w-[180px]">{name}</span>
+      <div className="px-4 py-3 border-b border-[#1c2333] flex flex-col gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <span className="text-xl bg-[#1c2333] p-1.5 rounded-md leading-none">{assetIcon}</span>
+              <div className="flex flex-col">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg font-bold text-white tracking-wide">{symbol}</span>
+                  {payout && (
+                    <span className="text-[11px] font-bold text-[#00c853] bg-[#00c853]/10 px-1.5 py-0.5 rounded">
+                      {payout}%
+                    </span>
+                  )}
+                </div>
+                <span className="text-[11px] text-slate-500 font-medium truncate max-w-[180px]">{name}</span>
+              </div>
+            </div>
+
+            <div className="hidden sm:flex flex-col ml-4">
+              <span className="text-[10px] text-slate-500 uppercase tracking-wider">Precio Actual</span>
+              <span className="text-2xl font-bold text-white font-mono leading-none">${formattedCurrentPrice}</span>
+            </div>
           </div>
 
-          <div className="hidden sm:flex items-center gap-1 bg-slate-950 px-2 py-1 rounded-lg border border-slate-800 text-xs font-mono">
-            <span className="text-slate-500">Último:</span>
-            <span className="font-bold text-emerald-400">${currentPrice}</span>
+          <div className="flex items-center gap-3">
+            {/* Timeframes estilo IQ Option */}
+            <div className="flex items-center gap-1">
+              {['5s', '15s', '30s', '1m', '5m'].map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => setTimeframe(tf)}
+                  className={`px-3 py-1.5 text-xs font-semibold transition relative ${
+                    timeframe === tf
+                      ? 'text-white'
+                      : 'text-slate-500 hover:text-slate-300'
+                  }`}
+                >
+                  {tf}
+                  {timeframe === tf && (
+                    <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[#00c853] shadow-[0_0_8px_#00c853]" />
+                  )}
+                </button>
+              ))}
+            </div>
+
+            <button
+              onClick={() => setShowIndicators(!showIndicators)}
+              className={`p-1.5 border transition rounded ${
+                showIndicators
+                  ? 'border-[#00c853]/30 text-[#00c853] bg-[#00c853]/5'
+                  : 'border-[#1c2333] text-slate-500 hover:text-slate-400'
+              }`}
+              title="Alternar Medias Móviles"
+            >
+              <Sliders className="w-4 h-4" />
+            </button>
           </div>
         </div>
-
-        {/* Timeframes oficiales de IQ Option & Indicadores */}
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-slate-950 rounded-lg p-0.5 border border-slate-800 text-xs font-mono">
-            {['5s', '15s', '30s', '1m', '5m'].map((tf) => (
-              <button
-                key={tf}
-                onClick={() => setTimeframe(tf)}
-                className={`px-2 py-1 rounded-md transition ${
-                  timeframe === tf
-                    ? 'bg-emerald-500/20 text-emerald-300 font-bold'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                {tf}
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setShowIndicators(!showIndicators)}
-            className={`p-1.5 rounded-lg border text-xs transition ${
-              showIndicators
-                ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-300'
-                : 'bg-slate-800 border-slate-700 text-slate-400'
-            }`}
-            title="Alternar Medias Móviles y Señal"
-          >
-            <Sliders className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      </div>
-
-      {/* Sub-cabecera con Verificación de Mercado Real Oficial */}
-      <div className="flex flex-wrap items-center justify-between gap-2 py-2 px-3 bg-slate-950/80 rounded-xl border border-slate-800/80 mt-2.5 text-xs">
-        <div className="flex items-center gap-2">
-          <span className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-rose-500/10 border border-rose-500/30 text-[10px] font-bold text-rose-400">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-ping"></span>
-            EN VIVO REAL
-          </span>
-          <span className="text-slate-300 font-mono text-[11px] truncate max-w-[260px] sm:max-w-none">
-            {displaySource}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-3 text-[11px] font-mono text-slate-400">
-          {realStats?.high && (
-            <span className="hidden sm:inline">Máx 24h: <strong className="text-slate-200">${realStats.high}</strong></span>
-          )}
-          {realStats?.low && (
-            <span className="hidden sm:inline">Mín 24h: <strong className="text-slate-200">${realStats.low}</strong></span>
-          )}
-          {realStats?.change != null && (
-            <span className={realStats.change >= 0 ? 'text-emerald-400 font-bold' : 'text-rose-400 font-bold'}>
-              {realStats.change >= 0 ? '+' : ''}{realStats.change.toFixed(2)}%
+        
+        {/* Info Feed y Stats */}
+        <div className="flex items-center gap-4 text-[11px] text-slate-500">
+          <div className="flex items-center gap-1.5">
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#00c853] opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#00c853]"></span>
             </span>
+            <span className="text-[#00c853] font-bold tracking-wider">EN VIVO</span>
+          </div>
+          <div className="w-px h-3 bg-[#1c2333]"></div>
+          <span className="font-mono text-slate-400">{displaySource}</span>
+          
+          {realStats && (
+            <>
+              <div className="w-px h-3 bg-[#1c2333]"></div>
+              <div className="flex items-center gap-3 font-mono">
+                {realStats.high && <span>H: <span className="text-slate-300">${realStats.high}</span></span>}
+                {realStats.low && <span>L: <span className="text-slate-300">${realStats.low}</span></span>}
+                {realStats.change != null && (
+                  <span className={realStats.change >= 0 ? 'text-[#00c853]' : 'text-[#ff1744]'}>
+                    {realStats.change >= 0 ? '+' : ''}{realStats.change.toFixed(2)}%
+                  </span>
+                )}
+              </div>
+            </>
           )}
         </div>
       </div>
 
       {/* Área del Gráfico SVG de Velas Japonesas */}
-      <div className="relative w-full overflow-hidden mt-3 select-none">
+      <div className="relative w-full overflow-hidden select-none bg-[#0a0e17] cursor-crosshair">
         <svg
           viewBox={`0 0 ${width} ${height}`}
           className="w-full h-auto block"
-          style={{ minHeight: '340px' }}
+          style={{ minHeight: '360px' }}
         >
-          {/* Rejilla de Fondo */}
+          <defs>
+            <linearGradient id="chartGradient" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stopColor="#00c853" stopOpacity="0.06" />
+              <stop offset="100%" stopColor="#0a0e17" stopOpacity="0.0" />
+            </linearGradient>
+            <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+              <feGaussianBlur stdDeviation="1.5" result="blur" />
+              <feMerge>
+                <feMergeNode in="blur" />
+                <feMergeNode in="SourceGraphic" />
+              </feMerge>
+            </filter>
+          </defs>
+
+          {/* Gradiente de fondo sutil */}
+          <rect x={padding.left} y={padding.top} width={chartWidth} height={chartHeight} fill="url(#chartGradient)" />
+
+          {/* Rejilla de Fondo Horizontal */}
           {priceLevels.map((p, i) => {
             const y = getY(p);
             return (
@@ -164,20 +229,54 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
                   y1={y}
                   x2={width - padding.right}
                   y2={y}
-                  stroke="#1e293b"
-                  strokeDasharray="3 3"
+                  stroke="#1c2333"
                   strokeWidth="1"
                 />
-                <text
-                  x={width - padding.right + 8}
-                  y={y + 4}
-                  fill="#64748b"
-                  fontSize="10"
-                  fontFamily="monospace"
-                >
-                  {p.toFixed(symbol.includes('JPY') ? 2 : symbol.includes('US30') ? 0 : 4)}
-                </text>
               </g>
+            );
+          })}
+          
+          {/* Rejilla vertical y etiquetas de tiempo */}
+          {timeLabels.map((t, i) => (
+            <g key={`t-${i}`}>
+              <line
+                x1={t.x}
+                y1={padding.top}
+                x2={t.x}
+                y2={height - padding.bottom}
+                stroke="#1c2333"
+                strokeWidth="1"
+              />
+              <text
+                x={t.x}
+                y={height - padding.bottom + 20}
+                fill="#546a87"
+                fontSize="10"
+                fontFamily="monospace"
+                textAnchor="middle"
+              >
+                {t.timeStr}
+              </text>
+            </g>
+          ))}
+
+          {/* Eje Y de Precios (Fondo a la derecha) */}
+          <rect x={width - padding.right} y={0} width={padding.right} height={height} fill="#0a0e17" opacity="0.9" />
+          <line x1={width - padding.right} y1={0} x2={width - padding.right} y2={height} stroke="#1c2333" strokeWidth="1" />
+
+          {priceLevels.map((p, i) => {
+            const y = getY(p);
+            return (
+              <text
+                key={`p-${i}`}
+                x={width - padding.right + 8}
+                y={y + 4}
+                fill="#546a87"
+                fontSize="10"
+                fontFamily="monospace"
+              >
+                {p.toFixed(isJpyOrIndex ? 2 : 5)}
+              </text>
             );
           })}
 
@@ -185,12 +284,12 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
           {showIndicators && (
             <polyline
               fill="none"
-              stroke="#06b6d4"
-              strokeWidth="1.8"
+              stroke="#00acc1"
+              strokeWidth="1.5"
               strokeLinecap="round"
               strokeLinejoin="round"
               points={emaPoints}
-              opacity="0.8"
+              opacity="0.6"
             />
           )}
 
@@ -198,7 +297,8 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
           {visibleCandles.map((c, idx) => {
             const xCenter = padding.left + idx * candleSpacing + candleSpacing / 2;
             const isGreen = c.close >= c.open;
-            const candleColor = isGreen ? '#10b981' : '#f43f5e';
+            // Colores IQ Option
+            const candleColor = isGreen ? '#00c853' : '#ff1744';
 
             const yOpen = getY(c.open);
             const yClose = getY(c.close);
@@ -206,75 +306,78 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
             const yLow = getY(c.low);
 
             const bodyY = Math.min(yOpen, yClose);
-            const bodyHeight = Math.max(2, Math.abs(yClose - yOpen));
+            const bodyHeight = Math.max(1.5, Math.abs(yClose - yOpen)); // No rounded corners
 
             return (
-              <g key={idx} className="transition-all duration-150">
-                {/* Mecha superior e inferior */}
+              <g key={idx} className="transition-all duration-100">
+                {/* Mecha superior e inferior delgada */}
                 <line
                   x1={xCenter}
                   y1={yHigh}
                   x2={xCenter}
                   y2={yLow}
                   stroke={candleColor}
-                  strokeWidth="1.4"
+                  strokeWidth="1"
                 />
-                {/* Cuerpo de la vela */}
+                {/* Cuerpo de la vela cuadrado */}
                 <rect
                   x={xCenter - candleBodyWidth / 2}
                   y={bodyY}
                   width={candleBodyWidth}
                   height={bodyHeight}
                   fill={candleColor}
-                  rx="1"
                 />
               </g>
             );
           })}
 
-          {/* Línea horizontal del precio actual con etiqueta */}
+          {/* Línea horizontal del precio actual con etiqueta a la derecha */}
           {currentPrice && (
             <g>
+              {/* Línea punteada que cruza el gráfico */}
               <line
                 x1={padding.left}
                 y1={getY(currentPrice)}
                 x2={width - padding.right}
                 y2={getY(currentPrice)}
-                stroke="#10b981"
+                stroke="#00c853"
                 strokeWidth="1.5"
-                strokeDasharray="4 2"
+                strokeDasharray="2 4"
               />
-              <circle
-                cx={width - padding.right}
-                cy={getY(currentPrice)}
-                r="3.5"
-                fill="#10b981"
+              
+              {/* Fondo del precio destacado en el eje Y */}
+              <polygon
+                points={`
+                  ${width - padding.right},${getY(currentPrice)}
+                  ${width - padding.right + 6},${getY(currentPrice) - 11}
+                  ${width},${getY(currentPrice) - 11}
+                  ${width},${getY(currentPrice) + 11}
+                  ${width - padding.right + 6},${getY(currentPrice) + 11}
+                `}
+                fill="#00c853"
+                filter="url(#glow)"
               />
-              <circle
-                cx={width - padding.right}
-                cy={getY(currentPrice)}
-                r="8"
-                fill="#10b981"
-                opacity="0.3"
-                className="animate-ping"
+              <polygon
+                points={`
+                  ${width - padding.right},${getY(currentPrice)}
+                  ${width - padding.right + 6},${getY(currentPrice) - 11}
+                  ${width},${getY(currentPrice) - 11}
+                  ${width},${getY(currentPrice) + 11}
+                  ${width - padding.right + 6},${getY(currentPrice) + 11}
+                `}
+                fill="#00c853"
               />
-              <rect
-                x={width - padding.right + 2}
-                y={getY(currentPrice) - 9}
-                width={padding.right - 4}
-                height={18}
-                fill="#10b981"
-                rx="3"
-              />
+              
+              {/* Texto del precio actual en el eje Y */}
               <text
-                x={width - padding.right + 6}
-                y={getY(currentPrice) + 3}
-                fill="#022c22"
-                fontSize="10"
+                x={width - padding.right + 10}
+                y={getY(currentPrice) + 4}
+                fill="#0a0e17"
+                fontSize="11"
                 fontFamily="monospace"
                 fontWeight="bold"
               >
-                {currentPrice}
+                {currentPrice.toFixed(isJpyOrIndex ? 2 : 5)}
               </text>
             </g>
           )}
@@ -282,24 +385,12 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
 
         {/* Leyenda de Indicadores */}
         {showIndicators && (
-          <div className="absolute top-2 left-2 flex items-center gap-3 bg-slate-950/80 px-2.5 py-1 rounded-md border border-slate-800 text-[10px] font-mono">
-            <span className="flex items-center gap-1 text-cyan-400">
-              <span className="w-2 h-0.5 bg-cyan-400 inline-block" /> EMA(9) Cuantitativa
-            </span>
-            <span className="flex items-center gap-1 text-emerald-400">
-              <span className="w-2 h-0.5 bg-emerald-400 inline-block" /> Precio En Vivo
+          <div className="absolute top-4 left-4 flex flex-col gap-1">
+            <span className="text-[10px] font-mono flex items-center gap-1 text-[#00acc1]">
+              <span className="w-3 h-px bg-[#00acc1]" /> EMA 9
             </span>
           </div>
         )}
-      </div>
-
-      {/* Footer del Gráfico con estado de conexión */}
-      <div className="mt-2 pt-2 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-500">
-        <div className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <span>Feed de datos en tiempo real activo &bull; Latencia: 18ms</span>
-        </div>
-        <span className="font-mono">Timeframe: {timeframe}</span>
       </div>
     </div>
   );
