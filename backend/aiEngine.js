@@ -121,6 +121,9 @@ export const AI_STRATEGIES = {
   }
 };
 
+// Cache de persistencia temporal para evitar giros histéricos (anti-whipsaw filter)
+const aiProbabilityCache = new Map();
+
 /**
  * Motor Principal de IA: Evalúa todas las métricas y calcula probabilidades
  * de SUBIDA vs BAJADA según la estrategia seleccionada.
@@ -163,45 +166,54 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
   // ESTRATEGIA 1: SCALPING TURBO (1M - 5M)
   // ==========================================
   if (strategy === 'scalping') {
-    const rsiFast = calculateRSI(candles, 7); // RSI de período 7 para reactividad inmediata
+    const rsiFast = calculateRSI(candles, 9);
 
-    // 1. Micro-Momentum de las últimas 2 velas (alta ponderación)
+    // 1. Alineación tendencial de medias móviles rápidas
+    if (currentPrice > ema9 && ema9 > ema21) {
+      confluenceScore += 20;
+      reasons.push(`Estructura tendencial alcista: precio > EMA(9) [${ema9.toFixed(2)}] > EMA(21).`);
+    } else if (currentPrice < ema9 && ema9 < ema21) {
+      confluenceScore -= 20;
+      reasons.push(`Estructura tendencial bajista: precio < EMA(9) [${ema9.toFixed(2)}] < EMA(21).`);
+    }
+
+    // 2. Micro-Momentum estructurado (ponderación moderada y controlada)
     if (isBullishCandle && (prevCandle.close > prevCandle.open)) {
-      confluenceScore += 35;
-      reasons.push('Micro-impulso alcista consecutivo de 2 velas con aceleración en el libro de órdenes.');
+      confluenceScore += 14;
+      reasons.push('Micro-impulso alcista confirmado por 2 velas consecutivas.');
     } else if (!isBullishCandle && (prevCandle.close < prevCandle.open)) {
-      confluenceScore -= 35;
-      reasons.push('Micro-impulso bajista consecutivo de 2 velas con presión vendedora inmediata.');
+      confluenceScore -= 14;
+      reasons.push('Micro-impulso bajista confirmado por 2 velas consecutivas.');
     } else if (isBullishCandle) {
-      confluenceScore += 20;
-      reasons.push('Vela actual de rechazo alcista rápido contra el spread de corto plazo.');
+      confluenceScore += 8;
+      reasons.push('Vela actual de rechazo comprador.');
     } else {
-      confluenceScore -= 20;
-      reasons.push('Vela actual de absorción bajista rápida con venta activa.');
+      confluenceScore -= 8;
+      reasons.push('Vela actual de rechazo vendedor.');
     }
 
-    // 2. RSI Ultra-reactivo (7)
+    // 3. RSI(9) equilibrado
     if (rsiFast < 25) {
-      confluenceScore += 30;
-      reasons.push(`RSI(7) en sobreventa extrema (${rsiFast.toFixed(1)}): gatillo de rebote scalper activado.`);
+      confluenceScore += 18;
+      reasons.push(`RSI(9) en sobreventa extrema (${rsiFast.toFixed(1)}): gatillo de rebote comprador.`);
     } else if (rsiFast > 75) {
-      confluenceScore -= 30;
-      reasons.push(`RSI(7) en sobrecompra extrema (${rsiFast.toFixed(1)}): agotamiento comprador inmediato.`);
-    } else if (rsiFast > 50) {
-      confluenceScore += 15;
-      reasons.push(`RSI(7) expansivo al alza (${rsiFast.toFixed(1)}).`);
-    } else {
-      confluenceScore -= 15;
-      reasons.push(`RSI(7) declinando a la baja (${rsiFast.toFixed(1)}).`);
+      confluenceScore -= 18;
+      reasons.push(`RSI(9) en sobrecompra extrema (${rsiFast.toFixed(1)}): agotamiento comprador.`);
+    } else if (rsiFast > 52) {
+      confluenceScore += 10;
+      reasons.push(`RSI(9) en zona de expansión alcista (${rsiFast.toFixed(1)}).`);
+    } else if (rsiFast < 48) {
+      confluenceScore -= 10;
+      reasons.push(`RSI(9) en zona de contracción bajista (${rsiFast.toFixed(1)}).`);
     }
 
-    // 3. Bollinger Scalping Rebound
+    // 4. Bollinger Scalping
     if (bb.percentB < 0.15) {
-      confluenceScore += 20;
-      reasons.push(`Precio rebotando en Banda Inferior Bollinger (${bb.lower.toFixed(2)}): entrada rápida en compresión.`);
+      confluenceScore += 14;
+      reasons.push(`Precio en Banda Inferior Bollinger (${bb.lower.toFixed(2)}): zona de soporte dinámico.`);
     } else if (bb.percentB > 0.85) {
-      confluenceScore -= 20;
-      reasons.push(`Precio sobre-extendido en Banda Superior Bollinger (${bb.upper.toFixed(2)}): toma de beneficios rápida.`);
+      confluenceScore -= 14;
+      reasons.push(`Precio en Banda Superior Bollinger (${bb.upper.toFixed(2)}): zona de resistencia dinámica.`);
     }
 
     reasons.push(`Ejecución Scalper: ratio riesgo/beneficio 1:1.8 con Stop Loss dinámico de ${activeStrat.timeHorizon}.`);
@@ -274,10 +286,10 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
 
     // 1. Alineación de Tendencia (EMAs 9, 21, 50)
     if (currentPrice > ema9 && ema9 > ema21) {
-      confluenceScore += 25;
+      confluenceScore += 24;
       reasons.push(`Tendencia alcista intradiaria: precio sobre EMA(9) [${ema9.toFixed(2)}] y EMA(21) [${ema21.toFixed(2)}].`);
     } else if (currentPrice < ema9 && ema9 < ema21) {
-      confluenceScore -= 25;
+      confluenceScore -= 24;
       reasons.push(`Tendencia bajista intradiaria: precio por debajo de EMA(9) [${ema9.toFixed(2)}] y EMA(21) [${ema21.toFixed(2)}].`);
     } else {
       reasons.push('Fase de consolidación lateral entre medias móviles.');
@@ -285,86 +297,102 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
 
     // 2. Momentum RSI
     if (rsi < 30) {
-      confluenceScore += 30;
+      confluenceScore += 20;
       reasons.push(`RSI en zona de sobreventa (${rsi.toFixed(1)}): alta probabilidad de rebote comprador.`);
     } else if (rsi > 70) {
-      confluenceScore -= 30;
+      confluenceScore -= 20;
       reasons.push(`RSI en zona de sobrecompra (${rsi.toFixed(1)}): presión vendedora inminente.`);
-    } else if (rsi > 50 && rsi <= 70) {
-      confluenceScore += 15;
+    } else if (rsi > 52) {
+      confluenceScore += 12;
       reasons.push(`RSI en territorio alcista constructivo (${rsi.toFixed(1)}).`);
-    } else {
-      confluenceScore -= 15;
+    } else if (rsi < 48) {
+      confluenceScore -= 12;
       reasons.push(`RSI en territorio bajista (${rsi.toFixed(1)}).`);
     }
 
     // 3. Bandas de Bollinger
-    if (bb.percentB < 0.1) {
-      confluenceScore += 20;
-      reasons.push(`Precio tocando Banda Inferior de Bollinger [${bb.lower.toFixed(2)}]: compresión alcista.`);
-    } else if (bb.percentB > 0.9) {
-      confluenceScore -= 20;
-      reasons.push(`Precio superando Banda Superior de Bollinger [${bb.upper.toFixed(2)}]: resistencia dinámica.`);
+    if (bb.percentB < 0.15) {
+      confluenceScore += 14;
+      reasons.push(`Precio testeando Banda Inferior Bollinger [${bb.lower.toFixed(2)}].`);
+    } else if (bb.percentB > 0.85) {
+      confluenceScore -= 14;
+      reasons.push(`Precio testeando Banda Superior Bollinger [${bb.upper.toFixed(2)}].`);
     }
 
     // 4. Momentum MACD
     if (macd.histogram > 0 && macd.macdLine > macd.signalLine) {
-      confluenceScore += 15;
-      reasons.push('Histograma MACD positivo con cruce de señal comprador intradiario.');
+      confluenceScore += 16;
+      reasons.push('Histograma MACD positivo con cruce de señal comprador.');
     } else if (macd.histogram < 0 && macd.macdLine < macd.signalLine) {
-      confluenceScore -= 15;
+      confluenceScore -= 16;
       reasons.push('Histograma MACD negativo indicando aceleración bajista.');
     }
 
-    // 5. Acción del Precio
-    if (isBullishCandle && candleBody / candleRange > 0.6) {
-      confluenceScore += 10;
-      reasons.push('Vela de fuerte rechazo alcista (cuerpo comprador dominante).');
-    } else if (!isBullishCandle && candleBody / candleRange > 0.6) {
-      confluenceScore -= 10;
-      reasons.push('Vela de impulso bajista dominante.');
+    // 5. Acción del Precio (confirmación moderada)
+    if (isBullishCandle && candleBody / candleRange > 0.5) {
+      confluenceScore += 8;
+      reasons.push('Vela de confirmación compradora.');
+    } else if (!isBullishCandle && candleBody / candleRange > 0.5) {
+      confluenceScore -= 8;
+      reasons.push('Vela de confirmación vendedora.');
     }
   }
 
-  // Ajustes según tipo de mercado
+  // Ajustes de micro-estructura según mercado
   if (marketType === 'blips' || marketType === 'blitz') {
-    if (isBullishCandle) confluenceScore += 6;
-    else confluenceScore -= 6;
+    if (isBullishCandle) confluenceScore += 4;
+    else confluenceScore -= 4;
   }
 
-  // Transformación sigmoide para obtener probabilidad matemática exacta
-  const k = strategy === 'scalping' ? 0.040 : strategy === 'swing_smc' ? 0.038 : 0.035;
-  const rawProbUp = 1 / (1 + Math.exp(-k * confluenceScore));
+  // Transformación sigmoide para obtener probabilidad base
+  const k = strategy === 'scalping' ? 0.035 : strategy === 'swing_smc' ? 0.032 : 0.030;
+  const rawProbUp = (1 / (1 + Math.exp(-k * confluenceScore))) * 100;
   
-  // Limitar rango probabilístico entre 10% y 90%
-  let probUp = Math.round(rawProbUp * 1000) / 10;
-  probUp = Math.max(10.0, Math.min(90.0, probUp));
+  // FILTRO CUANTITATIVO DE INERCIA TEMPORAL (Anti-Whipsaw Filter)
+  // Amortigua giros histéricos dando un 75% de persistencia temporal
+  const cacheKey = `${symbol}_${strategy}`;
+  const prevData = aiProbabilityCache.get(cacheKey);
+  let probUp = rawProbUp;
+
+  if (prevData) {
+    const elapsed = Date.now() - prevData.timestamp;
+    if (elapsed < 12000) { // Si la última lectura ocurrió en los últimos 12 segundos
+      probUp = (prevData.probUp * 0.75) + (rawProbUp * 0.25);
+    }
+  }
+
+  probUp = Math.round(probUp * 10) / 10;
+  probUp = Math.max(14.0, Math.min(88.0, probUp));
   const probDown = Math.round((100 - probUp) * 10) / 10;
 
-  // Determinar recomendación
-  let recommendation = 'NEUTRAL';
+  // Actualizar memoria temporal del modelo
+  aiProbabilityCache.set(cacheKey, { probUp, timestamp: Date.now() });
+
+  // Determinar recomendación con zonas claras de convicción y zona neutra
+  let recommendation = 'NEUTRAL (ESPERAR CONFIRMACIÓN)';
   let signalColor = 'yellow';
   let confidence = 'Moderada';
 
-  if (probUp >= 75.0) {
+  if (probUp >= 68.0) {
     recommendation = 'COMPRA FUERTE (CALL / BUY)';
     signalColor = 'green';
     confidence = 'Alta (85%+)';
-  } else if (probUp >= 57.0) {
+  } else if (probUp >= 56.0) {
     recommendation = 'COMPRA (CALL / BUY)';
     signalColor = 'green';
     confidence = 'Media-Alta (75%)';
-  } else if (probDown >= 75.0) {
+  } else if (probDown >= 68.0) {
     recommendation = 'VENTA FUERTE (PUT / SELL)';
     signalColor = 'red';
     confidence = 'Alta (85%+)';
-  } else if (probDown >= 57.0) {
+  } else if (probDown >= 56.0) {
     recommendation = 'VENTA (PUT / SELL)';
     signalColor = 'red';
     confidence = 'Media-Alta (75%)';
   } else {
-    recommendation = 'NEUTRAL (ESPERAR CONFIRMACIÓN)';
-    confidence = 'Baja (Esperar)';
+    recommendation = 'NEUTRAL (MERCADO EN RANGO / ESPERAR)';
+    signalColor = 'yellow';
+    confidence = 'Baja (Esperar Señal Clara)';
   }
 
   // Parámetros de ejecución adaptados a los instrumentos oficiales de IQ Option

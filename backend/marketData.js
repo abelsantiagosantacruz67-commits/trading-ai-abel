@@ -108,7 +108,7 @@ export const MARKETS_METADATA = {
     badge: 'Multiplicador x150',
     iqType: 'indices',
     assets: [
-      { symbol: 'US30', name: 'Dow Jones 30 (US 30 CFD IQ Option)', basePrice: 42450.00, volatility: 0.0006, decimals: 1, multiplier: 'x150', maxLeverage: 150, isOTC: false },
+      { symbol: 'US30', name: 'Dow Jones 30 (US 30 CFD IQ Option)', basePrice: 51580.00, volatility: 0.0006, decimals: 1, multiplier: 'x150', maxLeverage: 150, isOTC: false },
       { symbol: 'NAS100', name: 'Nasdaq 100 (Tech 100 CFD IQ Option)', basePrice: 20420.00, volatility: 0.0009, decimals: 1, multiplier: 'x150', maxLeverage: 150, isOTC: false },
       { symbol: 'SPX500', name: 'S&P 500 CFD IQ Option', basePrice: 5760.00, volatility: 0.0007, decimals: 1, multiplier: 'x150', maxLeverage: 150, isOTC: false },
       { symbol: 'GER40', name: 'Alemania 40 (DAX CFD IQ Option)', basePrice: 19480.00, volatility: 0.0008, decimals: 1, multiplier: 'x100', maxLeverage: 100, isOTC: false },
@@ -173,16 +173,23 @@ class MarketDataManager {
   }
 
   startLiveTickSimulation() {
-    // Micro-ticks de alta frecuencia anclados al precio en tiempo real
+    // Sincronización continua de alta frecuencia con los feeds reales de IQ Option
     setInterval(() => {
       for (const [marketKey, market] of Object.entries(MARKETS_METADATA)) {
         for (const asset of market.assets) {
           const realPrice = realMarketService.getRealPrice(asset.symbol);
-          const base = realPrice || this.currentPrices.get(asset.symbol) || asset.basePrice;
           
-          // Micro-fluctuación sub-segundo característica del gráfico de IQ Option
-          const microDelta = (Math.random() - 0.495) * asset.volatility * base * 0.12;
-          const newPrice = Number((base + microDelta).toFixed(asset.decimals));
+          let newPrice;
+          if (realPrice != null && !isNaN(realPrice) && realPrice > 0) {
+            // USAR PRECIO AUTÉNTICO DE IQ OPTION SIN DISTORSIÓN ARTIFICIAL
+            newPrice = realPrice;
+          } else {
+            // Solo para activos sin feed en vivo, aplicar micro-deriva sutil y orgánica
+            const current = this.currentPrices.get(asset.symbol) || asset.basePrice;
+            const microDelta = (Math.random() - 0.5) * asset.volatility * current * 0.03;
+            newPrice = Number((current + microDelta).toFixed(asset.decimals));
+          }
+
           this.currentPrices.set(asset.symbol, newPrice);
 
           // Actualizar la última vela activa en la tienda

@@ -15,6 +15,19 @@
   ],
   "signalsHistory": [
     {
+      "id": "sig_1790348399189",
+      "timestamp": 1790348399189,
+      "symbol": "EURUSD-BLITZ",
+      "name": "EUR/USD (Blitz IQ Option)",
+      "marketType": "blitz",
+      "recommendation": "NEUTRAL (MERCADO EN RANGO / ESPERAR)",
+      "probUp": 54.5,
+      "probDown": 45.5,
+      "price": 1.14032,
+      "confidence": "Baja (Esperar Señal Clara)",
+      "historicalWinRate": 82.8
+    },
+    {
       "id": "sig_1790126903849",
       "timestamp": 1790126903849,
       "symbol": "EURUSD-BLITZ",
@@ -1300,19 +1313,6 @@
       "price": 88822.47,
       "confidence": "Alta (85%+)",
       "historicalWinRate": 87.6
-    },
-    {
-      "id": "sig_1788973390504",
-      "timestamp": 1788973390504,
-      "symbol": "DIGITAL-EURUSD",
-      "name": "EUR/USD Digital (Strike Fijo)",
-      "marketType": "digital",
-      "recommendation": "VENTA (PUT / SELL)",
-      "probUp": 29.4,
-      "probDown": 70.6,
-      "price": 1.08132,
-      "confidence": "Media-Alta (72%)",
-      "historicalWinRate": 81.7
     }
   ],
   "payments": [
