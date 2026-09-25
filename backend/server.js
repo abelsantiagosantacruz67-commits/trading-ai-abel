@@ -4,6 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
 import { MARKETS_METADATA, marketData } from './marketData.js';
+import { iqOptionBridge } from './iqOptionBridge.js';
 import { analyzeMarketWithAI, AI_STRATEGIES } from './aiEngine.js';
 import { db, PAYMENT_CONFIG } from './database.js';
 
@@ -12,6 +13,9 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 4000;
+
+// Iniciar enlace WebSocket con IQ Option oficial
+iqOptionBridge.init();
 
 app.use(cors());
 app.use(express.json());
