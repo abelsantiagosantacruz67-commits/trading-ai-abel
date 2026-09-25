@@ -347,7 +347,7 @@ class RealMarketService {
           });
         }
       }
-    }, 1000);
+    }, 300);
   }
 
   updateAssetPrice(assetKey, rawPrice, meta = {}) {

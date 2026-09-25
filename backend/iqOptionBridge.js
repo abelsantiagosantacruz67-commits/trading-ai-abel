@@ -7,27 +7,62 @@ process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 // Mapeo exhaustivo de Active IDs oficiales de IQ Option a símbolos de nuestra plataforma
 export const IQ_ACTIVE_MAP = {
+  // Forex Principales y Blitz/Digital
   1: ['EURUSD', 'EURUSD-BLITZ', 'DIGITAL-EURUSD'],
+  1861: ['EURUSD', 'EURUSD-BLITZ', 'DIGITAL-EURUSD'],
   2: ['GBPUSD', 'GBPUSD-BLITZ', 'DIGITAL-GBPUSD'],
+  1867: ['GBPUSD', 'GBPUSD-BLITZ', 'DIGITAL-GBPUSD'],
   3: ['USDJPY', 'USDJPY-BLITZ', 'DIGITAL-USDJPY'],
+  1865: ['USDJPY', 'USDJPY-BLITZ', 'DIGITAL-USDJPY'],
   4: ['EURGBP'],
+  1862: ['EURGBP'],
   5: ['DIGITAL-EURJPY'],
   7: ['AUDCAD-BLITZ'],
   8: ['NZDUSD'],
+  1896: ['NZDUSD'],
   72: ['AUDUSD', 'DIGITAL-AUDUSD'],
+  1870: ['AUDUSD', 'DIGITAL-AUDUSD'],
   100: ['USDCAD'],
+  1878: ['USDCAD'],
+
   // Pares OTC oficiales de IQ Option (24/7 y fin de semana)
   76: ['EURUSD-OTC', 'EURUSD-OTC-BLITZ', 'DIGITAL-EURUSD-OTC'],
   77: ['GBPUSD-OTC-BLITZ', 'DIGITAL-GBPUSD-OTC'],
+  78: ['USDJPY-BLITZ'],
   79: ['DIGITAL-EURJPY'],
-  81: ['DIGITAL-GBPUSD-OTC'],
+  80: ['NZDUSD'],
+  81: ['GBPUSD-OTC', 'GBPUSD-OTC-BLITZ', 'DIGITAL-GBPUSD-OTC'],
   84: ['DIGITAL-GBPJPY'],
+  85: ['USDJPY-BLITZ'],
   86: ['AUDCAD-BLITZ'],
+  2111: ['AUDUSD', 'DIGITAL-AUDUSD'],
+  2112: ['USDCAD'],
+
   // Materias Primas / Commodities
   89: ['GOLD-BLITZ', 'XAUUSD', 'GOLD-OTC'],
+  1857: ['GOLD-BLITZ', 'XAUUSD', 'GOLD-OTC'],
+  1912: ['GOLD-BLITZ', 'XAUUSD', 'GOLD-OTC'],
+  1914: ['WTI'],
+  1915: ['BRENT'],
+  1931: ['BRENT'],
+
+  // Índices Bursátiles Globales
+  1472: ['US30'],
+  1973: ['US30'],
+  1470: ['SPX500'],
+  1478: ['GER40'],
+  2046: ['GER40'],
+
+  // Acciones de Wall Street
+  1923: ['MSFT'],
+  1926: ['GOOGL'],
+  1933: ['GOOGL'],
+  2403: ['NVDA'],
+
   // Criptomonedas IQ Option
   816: ['BTCUSD-BLITZ'],
-  // ETFs e Índices
+
+  // ETFs Fondos Indexados
   808: ['SPY'],
   1222: ['DIA']
 };

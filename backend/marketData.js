@@ -209,7 +209,7 @@ class MarketDataManager {
           }
         }
       }
-    }, 450);
+    }, 180);
   }
 
   getCandles(symbol) {

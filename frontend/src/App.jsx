@@ -285,11 +285,11 @@ export default function App() {
     }
   };
 
-  // Intervalo de datos en tiempo real (ticks de precio cada 600ms)
+  // Intervalo de datos ultra-rápido en tiempo real (ticks de precio cada 250ms)
   useEffect(() => {
     const tickInterval = setInterval(() => {
       fetchCandlesAndPrice(activeSymbolRef.current);
-    }, 600);
+    }, 250);
     return () => clearInterval(tickInterval);
   }, [fetchCandlesAndPrice]);
 
