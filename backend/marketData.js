@@ -219,6 +219,15 @@ class MarketDataManager {
     }, 180);
   }
 
+  setRealCandles(symbol, candles) {
+    if (!candles || !Array.isArray(candles) || candles.length === 0) return;
+    this.candlesStore.set(symbol, candles);
+    const last = candles[candles.length - 1];
+    if (last && last.close) {
+      this.currentPrices.set(symbol, last.close);
+    }
+  }
+
   getCandles(symbol) {
     const realCandles = realMarketService.getRealCandles(symbol);
     if (realCandles && realCandles.length >= 10) {

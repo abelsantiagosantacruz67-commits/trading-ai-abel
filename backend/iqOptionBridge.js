@@ -230,24 +230,35 @@ class IQOptionBridge {
       }
     }
 
-    // 3. Velas completas en tiempo real (candle-generated)
+    // 3. Historial de velas oficiales de IQ Option (get-candles response)
+    if (msg.name === 'candles' || (msg.msg && msg.msg.candles)) {
+      const rawCandles = msg.msg?.candles || msg.msg;
+      if (Array.isArray(rawCandles) && rawCandles.length > 0) {
+        let activeId = null;
+        if (msg.request_id && msg.request_id.startsWith('candles_')) {
+          activeId = parseInt(msg.request_id.split('_')[1], 10);
+        } else if (msg.msg?.active_id) {
+          activeId = msg.msg.active_id;
+        }
+
+        if (activeId && IQ_ACTIVE_MAP[activeId]) {
+          const symbols = IQ_ACTIVE_MAP[activeId];
+          for (const symbol of symbols) {
+            realMarketService.setRealHistoricalCandles(symbol, rawCandles, '1m');
+          }
+        }
+      }
+    }
+
+    // 4. Velas completas en tiempo real (candle-generated)
     if (msg.name === 'candle-generated') {
       const c = msg.msg;
       if (!c || !c.active_id) return;
       const symbols = IQ_ACTIVE_MAP[c.active_id];
       if (!symbols) return;
 
-      const price = c.close || c.value || c.ask;
-      if (!price || isNaN(price)) return;
-
       for (const symbol of symbols) {
-        realMarketService.updateAssetPrice(symbol, price, {
-          source: 'IQ Option Oficial (Feed Directo)',
-          high24h: c.max,
-          low24h: c.min,
-          volume: c.volume || 10,
-          lastUpdate: Date.now()
-        });
+        realMarketService.appendRealCandle(symbol, c, '1m');
       }
     }
   }
@@ -255,7 +266,7 @@ class IQOptionBridge {
   subscribeAllActives() {
     if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
 
-    console.log('[IQ Option Bridge] Suscribiendo a flujos de precios oficiales de IQ Option...');
+    console.log('[IQ Option Bridge] Suscribiendo y descargando velas oficiales de IQ Option...');
     const activeIds = Object.keys(IQ_ACTIVE_MAP);
 
     activeIds.forEach((activeId, idx) => {
@@ -289,9 +300,48 @@ class IQOptionBridge {
             },
             request_id: `sub_c_${activeId}`
           }));
+
+          // Descargar inmediatamente las 36 velas históricas reales de IQ Option
+          this.ws.send(JSON.stringify({
+            name: 'sendMessage',
+            msg: {
+              name: 'get-candles',
+              version: '2.0',
+              body: {
+                active_id: parseInt(activeId, 10),
+                size: 60,
+                to: Math.floor(Date.now() / 1000),
+                count: 36
+              }
+            },
+            request_id: `candles_${activeId}_60`
+          }));
         }
-      }, idx * 100); // Espaciar 100ms para no saturar el websocket
+      }, idx * 120);
     });
+  }
+
+  requestCandlesForSymbol(symbol, size = 60, count = 36) {
+    if (!this.ws || this.ws.readyState !== WebSocket.OPEN) return;
+    for (const [activeId, symbols] of Object.entries(IQ_ACTIVE_MAP)) {
+      if (symbols.includes(symbol)) {
+        this.ws.send(JSON.stringify({
+          name: 'sendMessage',
+          msg: {
+            name: 'get-candles',
+            version: '2.0',
+            body: {
+              active_id: parseInt(activeId, 10),
+              size: size,
+              to: Math.floor(Date.now() / 1000),
+              count: count
+            }
+          },
+          request_id: `candles_${activeId}_${size}`
+        }));
+        break;
+      }
+    }
   }
 
   scheduleReconnect(delayMs) {

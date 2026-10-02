@@ -49,6 +49,9 @@ app.get('/api/market/:symbol/candles', (req, res) => {
     return res.status(404).json({ success: false, message: 'Activo no encontrado' });
   }
 
+  // Refrescar velas oficiales directamente de IQ Option para este activo
+  iqOptionBridge.requestCandlesForSymbol(symbol, 60, 36);
+
   const candles = marketData.getCandles(symbol);
   const currentPrice = marketData.getCurrentPrice(symbol);
 

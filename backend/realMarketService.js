@@ -447,6 +447,72 @@ class RealMarketService {
     }
   }
 
+  setRealHistoricalCandles(assetKey, candles, timeframe = '1m') {
+    if (!candles || !Array.isArray(candles) || candles.length === 0) return;
+    if (!this.realCandles[assetKey]) {
+      this.realCandles[assetKey] = {
+        '5s': [],
+        '15s': [],
+        '30s': [],
+        '1m': [],
+        '5m': []
+      };
+    }
+    const formatted = candles.map(c => ({
+      timestamp: c.from ? c.from * 1000 : c.timestamp || Date.now(),
+      open: c.open,
+      high: c.max !== undefined ? c.max : (c.high !== undefined ? c.high : c.close),
+      low: c.min !== undefined ? c.min : (c.low !== undefined ? c.low : c.close),
+      close: c.close,
+      volume: c.volume || 10
+    }));
+
+    this.realCandles[assetKey][timeframe] = formatted;
+
+    const last = formatted[formatted.length - 1];
+    if (last && last.close) {
+      this.latestPrices[assetKey] = last.close;
+    }
+  }
+
+  appendRealCandle(assetKey, candle, timeframe = '1m') {
+    if (!candle) return;
+    if (!this.realCandles[assetKey]) {
+      this.realCandles[assetKey] = {
+        '5s': [],
+        '15s': [],
+        '30s': [],
+        '1m': [],
+        '5m': []
+      };
+    }
+    const list = this.realCandles[assetKey][timeframe];
+    const formatted = {
+      timestamp: candle.from ? candle.from * 1000 : candle.timestamp || Date.now(),
+      open: candle.open,
+      high: candle.max !== undefined ? candle.max : (candle.high !== undefined ? candle.high : candle.close),
+      low: candle.min !== undefined ? candle.min : (candle.low !== undefined ? candle.low : candle.close),
+      close: candle.close,
+      volume: candle.volume || 10
+    };
+
+    if (list.length === 0) {
+      list.push(formatted);
+    } else {
+      const last = list[list.length - 1];
+      if (Math.abs(last.timestamp - formatted.timestamp) < 60000) {
+        last.close = formatted.close;
+        last.high = Math.max(last.high, formatted.high);
+        last.low = Math.min(last.low, formatted.low);
+        last.volume += formatted.volume;
+      } else {
+        list.push(formatted);
+        if (list.length > 80) list.shift();
+      }
+    }
+    this.latestPrices[assetKey] = formatted.close;
+  }
+
   getRealPrice(symbol) {
     return this.latestPrices[symbol] || null;
   }
