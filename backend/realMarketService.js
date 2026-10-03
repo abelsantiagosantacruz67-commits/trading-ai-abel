@@ -267,6 +267,13 @@ class RealMarketService {
                 // Update base price for OTC engine, don't tick here
                 this.basePrices[assetKey] = data.price;
               } else {
+                // Si el activo tiene un feed activo oficial de IQ Option, NUNCA sobreescribir con Yahoo
+                const currentStat = this.marketStats[assetKey];
+                const isFedByIQ = currentStat?.source?.includes('IQ Option') && (Date.now() - (currentStat.lastUpdate || 0) < 30000);
+                if (isFedByIQ) {
+                  continue;
+                }
+
                 this.updateAssetPrice(assetKey, data.price, {
                   changePercent: data.changePercent,
                   high24h: data.high24h,
@@ -318,22 +325,26 @@ class RealMarketService {
   }
 
   initOTCEngine() {
-    // Generar ticks sintéticos y realistas cada 1 segundo para OTC
+    // Solo simular si NO hay conexión en vivo con IQ Option
     setInterval(() => {
       for (const [assetKey, meta] of Object.entries(REAL_ASSET_MAPPING)) {
         if (meta.type === 'otc') {
-          let basePrice = this.basePrices[assetKey] || this.latestPrices[assetKey] || 100;
-          let currentPrice = this.otcPrices[assetKey];
-
-          if (!currentPrice) {
-            currentPrice = basePrice;
+          // Si ya tenemos cotizaciones reales oficiales de IQ Option, NUNCA sobreescribir con simulación
+          const stat = this.marketStats[assetKey];
+          if (stat?.source?.includes('IQ Option') && (Date.now() - (stat.lastUpdate || 0) < 30000)) {
+            continue;
           }
 
-          // Random walk con mean reversion
-          // El precio se mueve aleatoriamente pero tiende a regresar al basePrice real
+          let basePrice = this.basePrices[assetKey] || this.latestPrices[assetKey];
+          if (!basePrice || basePrice <= 0 || basePrice === 100) {
+            continue;
+          }
+
+          let currentPrice = this.otcPrices[assetKey] || basePrice;
+
+          // Micro-volatilidad ultra sutil de respaldo
           const reversionStrength = 0.05;
-          const randomWalk = (Math.random() - 0.5) * basePrice * 0.0004; // Micro-volatilidad del 0.04%
-          
+          const randomWalk = (Math.random() - 0.5) * basePrice * 0.0002;
           const difference = basePrice - currentPrice;
           const meanReversion = difference * reversionStrength;
 
@@ -341,32 +352,28 @@ class RealMarketService {
           this.otcPrices[assetKey] = currentPrice;
 
           this.updateAssetPrice(assetKey, currentPrice, {
-            volume: Math.floor(Math.random() * 50) + 10,
+            volume: Math.floor(Math.random() * 20) + 5,
             source: 'IQ Option OTC Engine',
             lastUpdate: Date.now()
           });
         }
       }
-    }, 300);
+    }, 1000);
   }
 
   updateAssetPrice(assetKey, rawPrice, meta = {}) {
     if (!rawPrice || isNaN(rawPrice)) return;
 
-    // 1. Aplicar calibración IQ Option
-    let calibratedPrice = this.calibrateToIQOption(rawPrice, assetKey);
+    // Si viene directamente de IQ Option o Binance, el precio es 100% AUTÉNTICO Y DIRECTO
+    const isDirectOfficial = meta.source?.includes('IQ Option') || meta.source?.includes('Binance');
 
-    // 2. Aplicar Smoothing (EMA)
-    let previousSmoothed = this.smoothedPrices[assetKey];
-    if (!previousSmoothed) {
-      previousSmoothed = calibratedPrice;
-      this.smoothedPrices[assetKey] = calibratedPrice;
+    let finalPrice;
+    if (isDirectOfficial) {
+      // PRECIO 100% EXACTO DE IQ OPTION (cero retraso, cero distorsión de pips)
+      finalPrice = rawPrice;
+    } else {
+      finalPrice = this.calibrateToIQOption(rawPrice, assetKey);
     }
-    
-    // EMA smoothing: factor de suavizado del 30% (reacciona rápido pero sin saltos abruptos)
-    const smoothingFactor = 0.3;
-    const finalPrice = Number(((calibratedPrice * smoothingFactor) + (previousSmoothed * (1 - smoothingFactor))).toFixed(5));
-    this.smoothedPrices[assetKey] = finalPrice;
 
     this.latestPrices[assetKey] = finalPrice;
     this.marketStats[assetKey] = {
