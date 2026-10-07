@@ -338,26 +338,72 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
     }
   }
 
-  // Ajustes de micro-estructura según mercado
-  if (marketType === 'blips' || marketType === 'blitz') {
-    if (isBullishCandle) confluenceScore += 4;
-    else confluenceScore -= 4;
+  // =========================================================================
+  // MOTOR ESPECIALIZADO 1: PETRÓLEO CRUDO (WTI & BRENT) - ENERGÍAS INSTITUCIONALES
+  // =========================================================================
+  const isOil = symbol.includes('WTI') || symbol.includes('BRENT');
+  if (isOil) {
+    const oilVolRatio = atr / (currentPrice * 0.001 || 1);
+    const last3Closes = candles.slice(-3).map(c => c.close);
+    const oilConsecutiveUp = last3Closes[2] > last3Closes[1] && last3Closes[1] > last3Closes[0];
+    const oilConsecutiveDown = last3Closes[2] < last3Closes[1] && last3Closes[1] < last3Closes[0];
+
+    // Detección de Ruptura de Rango de Barriles (NYMEX / ICE Crack Spread)
+    if (oilConsecutiveUp && currentPrice > ema9) {
+      confluenceScore += 22;
+      reasons.push('Algoritmo de Petróleo: Impulso comprador sostenido con absorción de oferta en barril.');
+    } else if (oilConsecutiveDown && currentPrice < ema9) {
+      confluenceScore -= 22;
+      reasons.push('Algoritmo de Petróleo: Presión vendedora por inventarios / rechazo bajista en barril.');
+    }
+
+    // Filtro de Micro-Volatilidad en Petróleo
+    if (oilVolRatio > 1.2) {
+      reasons.push('Volatilidad de Petróleo activa (expansión de rango intradiario NYMEX).');
+    }
+  }
+
+  // =========================================================================
+  // MOTOR ESPECIALIZADO 2: BLITZ IQ OPTION (EXPIRACIONES ULTRARRÁPIDAS 5s-60s)
+  // =========================================================================
+  const isBlitz = marketType === 'blips' || marketType === 'blitz' || symbol.includes('BLITZ');
+  if (isBlitz) {
+    // Para Blitz el micro-tick momentum manda: velocidad de la última mecha vs cuerpo
+    const upperWick = lastCandle.high - Math.max(lastCandle.open, lastCandle.close);
+    const lowerWick = Math.min(lastCandle.open, lastCandle.close) - lastCandle.low;
+    const bodySize = Math.abs(lastCandle.close - lastCandle.open);
+
+    if (isBullishCandle && lowerWick > bodySize * 0.6) {
+      confluenceScore += 18;
+      reasons.push('Algoritmo Blitz: Rechazo de suelo por micro-mecha inferior (Rebote Turbo Comprador).');
+    } else if (!isBullishCandle && upperWick > bodySize * 0.6) {
+      confluenceScore -= 18;
+      reasons.push('Algoritmo Blitz: Rechazo de techo por micro-mecha superior (Rechazo Turbo Vendedor).');
+    } else if (isBullishCandle && bodySize > lowerWick + upperWick) {
+      confluenceScore += 12;
+      reasons.push('Algoritmo Blitz: Vela de expansión con cuerpo completo (Momentum Turbo Call).');
+    } else if (!isBullishCandle && bodySize > lowerWick + upperWick) {
+      confluenceScore -= 12;
+      reasons.push('Algoritmo Blitz: Vela de expansión bajista con cuerpo completo (Momentum Turbo Put).');
+    }
   }
 
   // Transformación sigmoide para obtener probabilidad base
-  const k = strategy === 'scalping' ? 0.035 : strategy === 'swing_smc' ? 0.032 : 0.030;
+  const k = isBlitz ? 0.040 : isOil ? 0.038 : strategy === 'scalping' ? 0.035 : strategy === 'swing_smc' ? 0.032 : 0.030;
   const rawProbUp = (1 / (1 + Math.exp(-k * confluenceScore))) * 100;
   
   // FILTRO CUANTITATIVO DE INERCIA TEMPORAL (Anti-Whipsaw Filter)
-  // Amortigua giros histéricos dando un 75% de persistencia temporal
+  // Blitz usa 8s para mayor reactividad sin perder estabilidad; otros usan 12s
   const cacheKey = `${symbol}_${strategy}`;
   const prevData = aiProbabilityCache.get(cacheKey);
   let probUp = rawProbUp;
 
   if (prevData) {
     const elapsed = Date.now() - prevData.timestamp;
-    if (elapsed < 12000) { // Si la última lectura ocurrió en los últimos 12 segundos
-      probUp = (prevData.probUp * 0.75) + (rawProbUp * 0.25);
+    const maxElapsed = isBlitz ? 8000 : 12000;
+    const persistence = isBlitz ? 0.60 : 0.75;
+    if (elapsed < maxElapsed) {
+      probUp = (prevData.probUp * persistence) + (rawProbUp * (1 - persistence));
     }
   }
 
