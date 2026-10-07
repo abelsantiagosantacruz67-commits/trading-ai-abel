@@ -100,9 +100,18 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
     return '📈';
   };
 
+  const getAssetDecimals = (sym, type) => {
+    if (!sym) return 2;
+    const s = sym.toUpperCase();
+    if (s.includes('JPY') || s.includes('NATGAS')) return 3;
+    if (type === 'forex' || s.includes('EUR') || s.includes('GBP') || s.includes('AUD') || s.includes('CAD') || s.includes('CHF') || s.includes('NZD')) return 5;
+    if (s.includes('US30') || s.includes('NAS') || s.includes('SPX') || s.includes('GER40')) return 1;
+    return 2; // Cripto (BTC, ETH), Acciones, Oro, Petróleo, etc.
+  };
+
+  const assetDecimals = getAssetDecimals(symbol, marketType);
   const assetIcon = getAssetIcon(marketType, symbol);
-  const isJpyOrIndex = symbol.includes('JPY') || symbol.includes('US30');
-  const formattedCurrentPrice = currentPrice ? currentPrice.toFixed(isJpyOrIndex ? 2 : 5) : '0.00000';
+  const formattedCurrentPrice = currentPrice != null ? currentPrice.toFixed(assetDecimals) : '0.00';
 
   return (
     <div className="bg-[#0a0e17] border border-[#1c2333] p-0 shadow-2xl flex flex-col justify-between font-sans overflow-hidden">
@@ -275,7 +284,7 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
                 fontSize="10"
                 fontFamily="monospace"
               >
-                {p.toFixed(isJpyOrIndex ? 2 : 5)}
+                {p.toFixed(assetDecimals)}
               </text>
             );
           })}
@@ -377,7 +386,7 @@ export default function ChartView({ symbol, name, candles = [], currentPrice, ma
                 fontFamily="monospace"
                 fontWeight="bold"
               >
-                {currentPrice.toFixed(isJpyOrIndex ? 2 : 5)}
+                {currentPrice.toFixed(assetDecimals)}
               </text>
             </g>
           )}

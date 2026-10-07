@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { 
   TrendingUp, TrendingDown, ShieldAlert, CheckCircle2, 
   Activity, Target, Clock, Lock, Sparkles, AlertTriangle, 
-  ArrowUpRight, ArrowDownRight, Zap, DollarSign, Percent
+  ArrowUpRight, ArrowDownRight, Zap, DollarSign, Percent,
+  Cpu, Layers
 } from 'lucide-react';
 
 export default function AIPredictionCard({ 
@@ -63,13 +64,30 @@ export default function AIPredictionCard({
     estimatedHistoricalWinRate,
     technicalIndicators,
     executionDetails,
-    reasoning
+    reasoning,
+    quantScore = 78,
+    tradeRating = 'GRADO INSTITUCIONAL A',
+    confluenceMatrix,
+    confluencesAligned = '4 de 5'
   } = prediction;
 
   const isBuy = probabilityUp >= probabilityDown;
   const payout = executionDetails?.payoutPercent || 92;
   const potentialProfit = ((investAmount * payout) / 100).toFixed(2);
   const totalReturn = (Number(investAmount) + Number(potentialProfit)).toFixed(2);
+
+  // Formateo dinámico exacto de decimales por tipo de activo
+  const getDecimals = (sym, type) => {
+    if (!sym) return 2;
+    const s = sym.toUpperCase();
+    if (s.includes('JPY') || s.includes('NATGAS')) return 3;
+    if (type === 'forex' || s.includes('EUR') || s.includes('GBP') || s.includes('AUD') || s.includes('CAD') || s.includes('CHF') || s.includes('NZD')) return 5;
+    if (s.includes('US30') || s.includes('NAS') || s.includes('SPX') || s.includes('GER40')) return 1;
+    return 2;
+  };
+  const decimals = getDecimals(symbol, marketType);
+  const rawPrice = currentPrice || prediction.currentPrice;
+  const displayPrice = typeof rawPrice === 'number' ? rawPrice.toFixed(decimals) : rawPrice;
 
   return (
     <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-2xl flex flex-col justify-between">
@@ -82,22 +100,27 @@ export default function AIPredictionCard({
                 {symbol} &bull; {marketType.toUpperCase()}
               </span>
               <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                <Sparkles className="w-3 h-3" /> IA IQ Option
+                <Cpu className="w-3 h-3" /> IA CUANTITATIVA
               </span>
               <span className="flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
                 <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
-                Feed Oficial En Vivo
+                Feed Puro Sin Retraso
               </span>
             </div>
-            <h3 className="text-lg font-bold text-white truncate max-w-[280px]">
-              {name}
-            </h3>
+            <div className="flex items-center gap-2 mt-1">
+              <h3 className="text-lg font-bold text-white truncate max-w-[240px]">
+                {name}
+              </h3>
+              <span className="text-[10px] font-extrabold px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 tracking-wider">
+                {tradeRating}
+              </span>
+            </div>
           </div>
 
           <div className="text-right">
-            <span className="text-[10px] text-slate-400 block font-medium">Precio Actual</span>
-            <span className="text-lg font-mono font-black text-emerald-400">
-              ${currentPrice || prediction.currentPrice}
+            <span className="text-[10px] text-slate-400 block font-medium">Precio Actual Exacto</span>
+            <span className="text-xl font-mono font-black text-emerald-400">
+              ${displayPrice}
             </span>
           </div>
         </div>
@@ -154,14 +177,17 @@ export default function AIPredictionCard({
             </div>
           </div>
 
-          {/* Gran porcentaje visual */}
+          {/* Gran porcentaje visual y Quant Score */}
           <div className="flex items-center justify-between font-mono font-black my-1">
             <span className="text-3xl text-emerald-400 drop-shadow-md">
               {probabilityUp}%
             </span>
-            <span className="text-xs font-bold px-2 py-1 rounded bg-slate-800 text-slate-400">
-              vs
-            </span>
+            <div className="flex flex-col items-center">
+              <span className="text-[10px] text-slate-400 font-sans uppercase font-bold tracking-wider">Quant Score</span>
+              <span className="text-sm font-extrabold px-2.5 py-0.5 rounded-full bg-cyan-500/10 text-cyan-300 border border-cyan-500/30">
+                {quantScore}/100
+              </span>
+            </div>
             <span className="text-3xl text-rose-400 drop-shadow-md">
               {probabilityDown}%
             </span>
@@ -180,7 +206,7 @@ export default function AIPredictionCard({
           </div>
 
           {/* Veredicto de la IA */}
-          <div className="mt-3 pt-3 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
+          <div className="mt-2.5 pt-2.5 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-2">
             <div className="flex items-center gap-2">
               <span className="text-[11px] text-slate-400">Veredicto IA:</span>
               <span className={`text-xs font-black px-2.5 py-1 rounded-lg tracking-wide ${
@@ -193,14 +219,98 @@ export default function AIPredictionCard({
             </div>
 
             <div className="flex items-center gap-2 text-xs">
-              <span className="text-[11px] text-slate-400">Confianza:</span>
-              <span className="font-semibold text-cyan-300">{confidence}</span>
+              <span className="text-[11px] text-slate-400">Confluencias:</span>
+              <span className="font-bold text-emerald-400">{confluencesAligned}</span>
               <span className="text-slate-600">&bull;</span>
               <span className="text-[11px] text-slate-400">WinRate Histórico:</span>
               <span className="font-mono font-bold text-amber-400">{estimatedHistoricalWinRate}%</span>
             </div>
           </div>
         </div>
+
+        {/* MATRIZ DE CONFLUENCIA INSTITUCIONAL (5 PILARES) */}
+        {confluenceMatrix && (
+          <div className="my-3 bg-slate-950/90 border border-slate-800/90 rounded-xl p-3">
+            <div className="flex items-center justify-between mb-2 pb-1.5 border-b border-slate-800/60">
+              <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                <Layers className="w-3.5 h-3.5 text-cyan-400" />
+                Matriz de Confluencia Institucional (5 Pilares)
+              </span>
+              <span className="text-[10px] font-mono text-cyan-300">
+                Alineación {confluencesAligned}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-1.5 text-[11px]">
+              {/* Pilar 1: Tendencia */}
+              <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 block font-semibold">1. {confluenceMatrix.trend?.name}</span>
+                  <span className="text-slate-300 text-[11px]">{confluenceMatrix.trend?.label}</span>
+                </div>
+                <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                  confluenceMatrix.trend?.status === 'BULLISH' ? 'bg-emerald-500/20 text-emerald-400' :
+                  confluenceMatrix.trend?.status === 'BEARISH' ? 'bg-rose-500/20 text-rose-400' :
+                  'bg-slate-800 text-slate-400'
+                }`}>
+                  {confluenceMatrix.trend?.status}
+                </span>
+              </div>
+
+              {/* Pilar 2: Momentum */}
+              <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 block font-semibold">2. {confluenceMatrix.momentum?.name}</span>
+                  <span className="text-slate-300 text-[11px]">{confluenceMatrix.momentum?.label}</span>
+                </div>
+                <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                  confluenceMatrix.momentum?.status === 'BULLISH' ? 'bg-emerald-500/20 text-emerald-400' :
+                  confluenceMatrix.momentum?.status === 'BEARISH' ? 'bg-rose-500/20 text-rose-400' :
+                  'bg-slate-800 text-slate-400'
+                }`}>
+                  {confluenceMatrix.momentum?.status}
+                </span>
+              </div>
+
+              {/* Pilar 3: Volatilidad */}
+              <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 block font-semibold">3. {confluenceMatrix.volatility?.name}</span>
+                  <span className="text-slate-300 text-[11px]">{confluenceMatrix.volatility?.label}</span>
+                </div>
+                <span className="text-[10px] font-mono font-black px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300">
+                  {confluenceMatrix.volatility?.status}
+                </span>
+              </div>
+
+              {/* Pilar 4: Smart Money Concepts */}
+              <div className="bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 block font-semibold">4. {confluenceMatrix.smartMoney?.name}</span>
+                  <span className="text-slate-300 text-[11px]">{confluenceMatrix.smartMoney?.label}</span>
+                </div>
+                <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                  confluenceMatrix.smartMoney?.status === 'ACCUMULATION' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                }`}>
+                  {confluenceMatrix.smartMoney?.status}
+                </span>
+              </div>
+
+              {/* Pilar 5: Flujo de Órdenes */}
+              <div className="sm:col-span-2 bg-slate-900/80 p-2 rounded-lg border border-slate-800 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-500 block font-semibold">5. {confluenceMatrix.orderFlow?.name}</span>
+                  <span className="text-slate-300 text-[11px]">{confluenceMatrix.orderFlow?.label}</span>
+                </div>
+                <span className={`text-[10px] font-mono font-black px-1.5 py-0.5 rounded ${
+                  confluenceMatrix.orderFlow?.status === 'BUY_DELTA' ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
+                }`}>
+                  {confluenceMatrix.orderFlow?.status}
+                </span>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* 2. BOTONERA DE TRADING IDÉNTICA A IQ OPTION (SUBE / BAJA) */}
         <div className="my-4 bg-slate-950/80 border border-slate-800 rounded-xl p-3.5 shadow-lg">
@@ -218,6 +328,24 @@ export default function AIPredictionCard({
                 {executionDetails?.iqMultiplier || 'Multiplicador x1000'}
               </span>
             )}
+          </div>
+
+          {/* Selector de importe rápido */}
+          <div className="flex items-center gap-1.5 mb-2.5 pb-2 border-b border-slate-850">
+            <span className="text-[10px] text-slate-500 uppercase font-semibold">Importe:</span>
+            {[1, 5, 10, 25, 50].map((amt) => (
+              <button
+                key={amt}
+                onClick={() => setInvestAmount(amt)}
+                className={`px-2 py-0.5 rounded text-[11px] font-mono font-bold transition ${
+                  investAmount === amt
+                    ? 'bg-emerald-500 text-slate-950 shadow-md'
+                    : 'bg-slate-900 text-slate-400 hover:text-white border border-slate-800'
+                }`}
+              >
+                ${amt}
+              </button>
+            ))}
           </div>
 
           {/* Parámetros de Expiración / Inversión */}

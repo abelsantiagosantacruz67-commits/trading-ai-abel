@@ -475,11 +475,72 @@ export function analyzeMarketWithAI({ marketType, symbol, name, candles, current
   const confidenceBonus = Math.abs(probUp - 50) * 0.35;
   const estimatedHistoricalWinRate = Number((activeStrat.baseWinRate + confidenceBonus).toFixed(1));
 
+  // Matriz de Confluencia Institucional Cuantitativa (5 Pilares)
+  const isBuy = probUp >= probDown;
+  const quantScore = Math.round(Math.max(probUp, probDown));
+  const tradeRating = quantScore >= 75 ? 'GRADO INSTITUCIONAL A+' : quantScore >= 62 ? 'ALTA CONVICCIÓN A' : 'EN DESARROLLO B';
+  
+  const rsiVal = calculateRSI(candles, strategy === 'scalping' ? 9 : 14);
+  const trendBullish = currentPrice > ema9 && ema9 > ema21;
+  const trendBearish = currentPrice < ema9 && ema9 < ema21;
+  const momentumBullish = rsiVal > 50 && macd.histogram >= 0;
+  const momentumBearish = rsiVal < 50 && macd.histogram <= 0;
+  const volBullish = bb.percentB < 0.35 || (isBuy && bb.percentB > 0.45);
+  const smcBullish = isBullishCandle && lastCandle.close >= prevCandle.close;
+  const orderFlowBullish = isBullishCandle;
+
+  let alignedCount = 0;
+  if (isBuy) {
+    if (trendBullish) alignedCount++;
+    if (momentumBullish) alignedCount++;
+    if (volBullish) alignedCount++;
+    if (smcBullish) alignedCount++;
+    if (orderFlowBullish) alignedCount++;
+  } else {
+    if (trendBearish) alignedCount++;
+    if (momentumBearish) alignedCount++;
+    if (!volBullish) alignedCount++;
+    if (!smcBullish) alignedCount++;
+    if (!orderFlowBullish) alignedCount++;
+  }
+
+  const confluenceMatrix = {
+    trend: {
+      name: 'Estructura & Tendencia',
+      status: trendBullish ? 'BULLISH' : (trendBearish ? 'BEARISH' : 'NEUTRAL'),
+      label: trendBullish ? 'Alineación Alcista EMA(9/21/50)' : (trendBearish ? 'Alineación Bajista EMA(9/21/50)' : 'Consolidación Lateral')
+    },
+    momentum: {
+      name: 'Momentum RSI & MACD',
+      status: momentumBullish ? 'BULLISH' : (momentumBearish ? 'BEARISH' : 'NEUTRAL'),
+      label: momentumBullish ? `Fuerza Compradora (RSI ${rsiVal.toFixed(1)})` : (momentumBearish ? `Presión Vendedora (RSI ${rsiVal.toFixed(1)})` : 'Momentum Neutro')
+    },
+    volatility: {
+      name: 'Bollinger & Volatilidad',
+      status: bb.percentB < 0.2 ? 'OVERSOLD' : (bb.percentB > 0.8 ? 'OVERBOUGHT' : 'NORMAL'),
+      label: bb.percentB < 0.2 ? 'Rebote Soporte Bollinger' : (bb.percentB > 0.8 ? 'Resistencia Banda Superior' : 'Rango Normal de Volatilidad')
+    },
+    smartMoney: {
+      name: 'Zonas Institucionales SMC',
+      status: isBuy ? 'ACCUMULATION' : 'DISTRIBUTION',
+      label: isBuy ? 'Zona de Mitigación / Compra Institucional' : 'Zona de Distribución / Venta Institucional'
+    },
+    orderFlow: {
+      name: 'Flujo de Órdenes (Delta)',
+      status: orderFlowBullish ? 'BUY_DELTA' : 'SELL_DELTA',
+      label: orderFlowBullish ? 'Delta Positivo (Absorción Compradora)' : 'Delta Negativo (Presión Vendedora)'
+    }
+  };
+
   return {
     symbol,
     name,
     marketType,
     currentPrice,
+    quantScore,
+    tradeRating,
+    confluenceMatrix,
+    confluencesAligned: `${alignedCount} de 5`,
     strategy: activeStrat,
     strategyId: activeStrat.id,
     probabilityUp: probUp,
